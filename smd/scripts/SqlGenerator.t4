@@ -1,0 +1,360 @@
+﻿<#@ template debug="true" hostSpecific="true" inherits="Microsoft.VisualStudio.TextTemplating.VSHost.ModelingTextTransformation" #>
+<#@ StorageModelDriven processor="StorageModelDrivenDirectiveProcessor" requires="fileName='.smd'" #>
+<#@ output extension=".txt" #>
+<#@ parameter name="Folder" type="System.String" #>
+<#@ assembly name="System.Configuration" #>
+<#@ assembly name="System.Core" #>
+<#@ assembly name="EnvDTE" #>
+<#@ assembly name="$(SolutionDir)\libs\bsn.GoldParser.dll" #>
+<#@ assembly name="$(SolutionDir)\libs\bsn.ModuleStore.Parser.dll" #>
+<#@ assembly name="Microsoft.Build" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Diagnostics" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="bsn.ModuleStore.Sql.Script.Tokens" #>
+<#@ include file="$(SolutionDir)\.Solutionfolders\ttIncludes\SqlServerWriter.generated.ttinclude" #>
+<#@ include file="$(SolutionDir)\.Solutionfolders\ttIncludes\ParsingSolution.ttinclude" #>
+<#@ include file="$(SolutionDir)\.Solutionfolders\ttIncludes\configDesigner.intellisense.ttinclude" #>
+<# 
+
+	//System.Diagnostics.Debugger.Launch();
+	//System.Diagnostics.Debugger.Break();
+
+	string _folder = Folder;
+	if (string.IsNullOrEmpty(Folder))
+		_folder = "MyDatabase";
+
+	if (string.IsNullOrEmpty(_folder))
+		throw new Exception("Argument 'Folder' can'be null or empty");
+
+
+	using(ManagerScope manager = ScopeHelper.StartManager())
+    {
+
+		StorageRoot models = this.StorageRoot;
+		
+		// Tables
+		foreach (StorageTable e in models.Tables)
+		{
+
+			NodeItemFolder _table = ResolveFolder(_folder, e.Namespace, "Tables", manager);
+
+			using(var f = manager.NewFile(e.Name + ".sql", _table))
+            {				
+
+				WriteLine(Header());
+
+				CreateTableWriter table = Ddl.Create.Table(e.Namespace, e.Name);
+		
+				foreach (StorageColumn column in e.GetColumns())
+					CreateColumn(column, table);
+
+				List<IndexColumn> _cols = new List<IndexColumn>();
+				foreach (PrimaryProperty pr in e.GetKeys())
+					_cols.Add(new IndexColumn(new ColumnName (pr.Name), OrderTypeToken.GetOrderTypeAscToken()));
+
+				var clustered = ToBoolean(e.GetPropertyValue("INDEX_ALLOW_PAGE_LOCKS"));
+				Clustered c = clustered ? Clustered.Clustered : Clustered.Nonclustered;
+
+				table.PrimaryKey(e.PrimaryConstraintName, c, 
+					ConstraintIndex.GetConstraintIndexOptions
+					(
+						IndexOption.GetIndexOptionToggle(ConstraintIndex.PAD_INDEX, ToBoolean(e.GetPropertyValue("INDEX_PAD_INDEX"))),
+						IndexOption.GetIndexOptionToggle(ConstraintIndex.STATISTICS_NORECOMPUTE, ToBoolean(e.GetPropertyValue("INDEX_STATISTICS_NORECOMPUTE"))),
+						IndexOption.GetIndexOptionToggle(ConstraintIndex.IGNORE_DUP_KEY, ToBoolean(e.GetPropertyValue("INDEX_IGNORE_DUP_KEY"))),
+						IndexOption.GetIndexOptionToggle(ConstraintIndex.ALLOW_ROW_LOCKS, ToBoolean(e.GetPropertyValue("INDEX_ALLOW_ROW_LOCKS"))),
+						IndexOption.GetIndexOptionToggle(ConstraintIndex.ALLOW_PAGE_LOCKS, ToBoolean(e.GetPropertyValue("INDEX_ALLOW_PAGE_LOCKS")))
+					), _cols.ToArray());
+
+				WriteLine(table.ToString());	
+				WriteLine("GO");
+				WriteLine(string.Empty);
+								
+            }
+		}
+
+		// Indexes
+		foreach (StorageTable e in models.Tables)
+		{
+
+			NodeItemFolder _table = ResolveFolder(_folder, e.Namespace, "Indexes", manager);
+
+			foreach (StorageConstraintIndex constraint in e.StorageConstraintIndex)
+			{
+		
+				using(var f = manager.NewFile(constraint.Name + ".sql", _table))
+				{
+
+					WriteLine(Header());
+
+					List<IndexColumn> _cols = new List<IndexColumn>();
+					foreach (StorageConstraintIndexColumn pr in constraint.Columns)
+						_cols.Add(new IndexColumn(new ColumnName (pr.Name), OrderTypeToken.GetOrderTypeAscToken()));
+
+					var clustered = ToBoolean(e.GetPropertyValue("INDEX_ALLOW_PAGE_LOCKS"));
+					Clustered c = clustered ? Clustered.Clustered : Clustered.Nonclustered;
+
+					AlterTableAddWriter table = Ddl.Alter.Table.AlterTableAdd(e.Namespace, e.Name, true);
+					table.UniqueIndex(constraint.Name, c, ConstraintIndex.GetConstraintIndexOptions
+					(
+						IndexOption.GetIndexOptionToggle(ConstraintIndex.PAD_INDEX, ToBoolean(e.GetPropertyValue("INDEX_PAD_INDEX"))),
+						IndexOption.GetIndexOptionToggle(ConstraintIndex.STATISTICS_NORECOMPUTE, ToBoolean(e.GetPropertyValue("INDEX_STATISTICS_NORECOMPUTE"))),
+						IndexOption.GetIndexOptionToggle(ConstraintIndex.IGNORE_DUP_KEY, ToBoolean(e.GetPropertyValue("INDEX_IGNORE_DUP_KEY"))),
+						IndexOption.GetIndexOptionToggle(ConstraintIndex.ALLOW_ROW_LOCKS, ToBoolean(e.GetPropertyValue("INDEX_ALLOW_ROW_LOCKS"))),
+						IndexOption.GetIndexOptionToggle(ConstraintIndex.ALLOW_PAGE_LOCKS, ToBoolean(e.GetPropertyValue("INDEX_ALLOW_PAGE_LOCKS")))
+					), _cols.ToArray());
+		 
+		 
+					WriteLine(table.ToString());	
+					WriteLine("GO");
+					WriteLine(string.Empty);
+                }
+			}
+
+		}
+
+		// Constraint foreign key
+		foreach (StorageTable e in models.Tables)
+		{
+
+			NodeItemFolder _table = ResolveFolder(_folder, e.Namespace, "Foreign", manager);
+
+			foreach (StorageRelationship rel in e.Relationships)
+			{
+				using(var f = manager.NewFile(rel.Name + ".sql", _table))
+				{
+
+					WriteLine(Header());
+
+					var t2 = Ddl.TableName(rel.TargetTable.Namespace, rel.TargetTable.Name);
+
+					List<ColumnName> cols = new List<ColumnName>();
+					List<ColumnName> refCols = new List<ColumnName>();
+					foreach (RelationshipMappedProperty map in rel.RelationshipMappedProperty)
+					{
+						cols.Add(map.SourceColumn.Column.Name);
+						refCols.Add(map.TargetColumn.Column.Name);
+					}
+
+					AlterTableAddWriter table = Ddl.Alter.Table.AlterTableAdd(e.Namespace, e.Name, true);
+					table.ForeignKey(rel.Name, cols, t2, refCols);
+
+					WriteLine(table.ToString());	
+					WriteLine("GO");
+					WriteLine(string.Empty);
+                }
+			}
+		}	
+
+    }
+#>
+<#+ 
+
+public static NodeItemFolder ResolveFolder( string root, string _namespace, string _folder, ManagerScope manager)
+{
+
+	var path = new Queue<string>(root.Split('\\'));
+	var projectName = path.Dequeue();
+	NodeProject project = manager.GetProject(projectName);
+	if (project == null)
+		throw new Exception(String.Format("invalid project name {0}. Please check the parameter 'Folder'", projectName));
+	NodeItemFolder folder = null;
+	if (path.Count  != 0)
+		while(path.Count > 0)
+		{
+			var _f = path.Dequeue();
+			if (folder != null)
+				folder = folder.GetFolder(_f);
+			else
+				folder = project.GetFolder(_f);
+		}
+	else
+		if (folder != null)
+			folder = folder.GetFolder(_namespace);
+		else
+			folder = project.GetFolder(_namespace);
+
+	NodeItemFolder folderIndexes = folder.GetFolder(_folder);
+	
+	return folderIndexes;
+
+}
+
+public static bool ToBoolean(object value)
+{
+
+	if (value == null)
+		return false;
+
+	string v = value.ToString();
+	if (string.IsNullOrEmpty(v))
+		return false;
+    var t = v.Trim().ToLower();
+    if (t == "false" || t == "n" || t == "0" || t == "no" || t == "n/a" || t == "disabled")
+		return false;
+    else if (t == "true" || t == "y" || t == "yes" || t == "o" || t == "1" || t == "-1" || t == "enabled")
+		return true;
+
+    return false;
+}
+
+public static void CreateColumn(StorageColumn column, CreateTableWriter table)
+{
+
+	var col = table.CreateColumn(column.Name, GetType(column), column.Nullable);
+	
+	switch (column.Type.Name)
+	{
+
+		case "BIGINT":
+		case "INT":
+		case "SMALLINT":
+			if (column.IsIdentity)
+            {
+				long identitySeed = 0;
+				long identityIncrement = 0;
+				if (!long.TryParse(column.IdentityIncrement, out identityIncrement))
+					identityIncrement = 1;
+				if (!long.TryParse(column.IdentitySeed, out identitySeed))
+					identitySeed = 1;
+				col.Identity(identitySeed, identityIncrement);
+            }
+			break;
+	
+	    default:
+	        break;
+
+	}	
+
+	if (!string.IsNullOrEmpty(column.InitialValue))
+    {
+		//col.DefaultValue(bsn.ModuleStore.Sql.Script.Tokens.SqExpression.(""));
+    }
+
+	if (!string.IsNullOrEmpty(column.CheckExpression))
+    {
+		//col.Check(true, Predicate);
+    }
+
+}
+
+public static Qualified<SchemaName, TypeName> GetType(StorageColumn column)
+{
+
+    switch (column.Type.Name)
+    {
+		case "BIGINT":
+			return Ddl.Types.BIGINT();			
+		case "INT":
+			return Ddl.Types.INT();
+		case "SMALLINT":
+			return Ddl.Types.SMALLINT();
+
+		case "BINARY":
+			return Ddl.Types.BINARY(column.Length);
+		case "BIT":
+			return Ddl.Types.BIT();
+		case "CHAR":
+			return Ddl.Types.CHAR(column.Length);
+		case "DATE":
+			return Ddl.Types.DATE();
+		case "DATETIME":
+			return Ddl.Types.DATETIME();
+		case "DATETIME2":
+			return Ddl.Types.VARCHAR(column.Length);
+		case "DATETIMEOFFSET":
+			if (column.Length == 0)
+				return Ddl.Types.DATETIMEOFFSET();
+			else
+				return Ddl.Types.DATETIMEOFFSET(column.Length);
+		case "DECIMAL":
+			return Ddl.Types.DECIMAL(column.Length, column.Precision);
+		case "FLOAT":
+			return Ddl.Types.FLOAT();
+		case "GEOGRAPHY":
+			return Ddl.Types.GEOGRAPHY();
+		case "GEOMETRY":
+			return Ddl.Types.GEOMETRY();
+		case "HIERARCHYID":
+			return Ddl.Types.HIERARCHYID();
+		case "IMAGE":
+			return Ddl.Types.IMAGE();
+		case "MONEY":
+			return Ddl.Types.MONEY();
+		case "NCHAR":
+			return Ddl.Types.NCHAR(column.Length);
+		case "NTEXT":
+			return Ddl.Types.NTEXT();
+		case "NVARCHAR":
+			return Ddl.Types.NVARCHAR(column.Length);
+		case "NUMERIC":
+			return Ddl.Types.NUMERIC(column.Length, column.Precision);
+		case "REAL":
+			return Ddl.Types.REAL();
+		case "SMALLDATETIME":
+			return Ddl.Types.SMALLDATETIME();
+		case "SMALLMONEY":
+			return Ddl.Types.SMALLMONEY();
+		case "SQL_VARIANT":
+			return Ddl.Types.SQL_VARIANT();
+		case "TEXT":
+			return Ddl.Types.TEXT();
+		case "TIME":
+			return Ddl.Types.TIME(column.Length);
+		case "TIMESTAMP":
+			return Ddl.Types.TIMESTAMP();
+		case "TINYINT":
+			return Ddl.Types.TINYINT();
+		case "UNIQUEIDENTIFIER":
+			return Ddl.Types.UNIQUEIDENTIFIER();
+		case "VARBINARY":
+			return Ddl.Types.VARBINARY(column.Length);
+		case "VARCHAR":
+			return Ddl.Types.VARCHAR(column.Length);
+		case "XML":
+			return Ddl.Types.XML();
+        default:
+            break;
+
+    }
+
+
+	return Ddl.Types.VARCHAR(10);
+
+}
+
+public static string Header()
+{
+
+	return @"/*
+ *	<auto-generated>									
+ *                     									
+ *	This code was generated from a template launched by Model driven
+ *	for more information see http://devtm.fr
+ *
+ *	Tool created by	Gael beard gaelgael5@gmail.com Copyright 2015
+ *                     									
+ *	Changes to this file may cause incorrect behavior and will be lost if the 
+ *  code is regenerated.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the ""License"");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software distributed
+ *  under the License is distributed on an ""AS IS"" BASIS, WITHOUT WARRANTIES OR 
+ *  CONDITIONS OF ANY KIND, either express or implied. See the License for the 
+ *  specific language governing permissions and limitations under the License.
+ *		
+ *	</auto-generated>                  					
+ */
+		";
+}
+
+#>

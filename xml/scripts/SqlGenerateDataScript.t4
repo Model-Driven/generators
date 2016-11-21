@@ -1,0 +1,1448 @@
+﻿<#@ template debug="true" hostSpecific="true" #>
+<#@ output extension=".txt" #>
+<#@ parameter name="Filename" type="System.String" #>
+<#@ parameter name="Folder" type="System.String" #>
+<#@ assembly name="System.Core" #>
+<#@ assembly name="Microsoft.Build" #>
+<#@ assembly name="System.Xml" #>
+<#@ assembly name="System.Xml.Linq" #>
+<#@ import namespace="System.CodeDom.Compiler" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Diagnostics" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Xml" #>
+<#@ import namespace="System.Xml.Schema" #>
+<#@ import namespace="System.Xml.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ include file="$(SolutionDir)\.Solutionfolders\ttIncludes\ParsingSolution.ttinclude" #>
+<# 
+
+	//System.Diagnostics.Debugger.Launch();
+	//System.Diagnostics.Debugger.Break();
+
+	string filename = Filename;
+	if (string.IsNullOrEmpty(filename))
+		filename = @"C:\black-beard\ModelDriven\Tests\Test1\Test1\Models\Database\Countries.inter.xml";
+
+	string _folder = Folder;
+	if (string.IsNullOrEmpty(_folder))
+		_folder = @"MyDatabase";
+
+	var targetFilename = Path.GetFileNameWithoutExtension(filename);
+	string _namespace = "dbo";
+	
+	// Load schemas
+	string schemafile = @"C:\black-beard\ModelDriven\Tests\Test1\Test1\Models\Database\Countries.xsd";
+	DataContext ctx = new DataContext(new FileInfo(filename).Directory.FullName);
+	SchemaReader reader = new SchemaReader(schemafile);
+
+	NodeItemFolder folderData = null;
+	NodeProject project = null;
+
+
+
+	
+	Action<NodeItem> actNone = i =>
+    {/*
+		string _path = i.RelativePath;
+		var _prj = i.Project;
+		Microsoft.Build.Construction.ProjectItemElement item2 = _prj.GetData(_path);
+		if (item2 != null)
+		{
+			if (item2.ItemType != "None")
+            {
+				Microsoft.Build.Construction.ProjectItemGroupElement compileGroup = _prj.GetItemGroup("None");
+				if (compileGroup == null)
+					compileGroup = _prj.AddItemGroup();
+				compileGroup.AddItem("None", item2.Include);
+				item2.Parent.RemoveChild(item2);				
+				compileGroup.ContainingProject.Save();
+            }
+		}
+
+    */};
+
+	Action<NodeItem> actPostDeployment = i =>
+    {/*
+		string _path = i.RelativePath;
+		var _prj = i.Project;
+		Microsoft.Build.Construction.ProjectItemElement item2 = _prj.GetData(_path);
+		if (item2 != null)
+		{
+			if (item2.ItemType != "PostDeploy")
+            {
+				Microsoft.Build.Construction.ProjectItemGroupElement compileGroup = _prj.GetItemGroup("PostDeploy");
+				if (compileGroup == null)
+					compileGroup = _prj.AddItemGroup();
+				compileGroup.AddItem("PostDeploy", item2.Include);
+				item2.Parent.RemoveChild(item2);
+				compileGroup.ContainingProject.Save();
+            }
+		}
+
+    */};
+
+	using(ManagerScope manager = ScopeHelper.StartManager())
+    {
+
+		// Resolve target folder for generation	
+		var path = new Queue<string>(_folder.Split('\\'));
+		var projectName = path.Dequeue();
+		project = manager.GetProject(projectName);
+		if (project == null)
+			throw new Exception(String.Format("invalid project name {0}. Please check the parameter 'Folder'", projectName));
+		NodeItemFolder folder = null;
+		if (path.Count  != 0)
+			while(path.Count > 0)
+			{
+				var _f = path.Dequeue();
+				if (folder != null)
+					folder = folder.GetFolder(_f);
+				else
+					folder = project.GetFolder(_f);
+			}
+		else
+			if (folder != null)
+				folder = folder.GetFolder(_namespace);
+			else
+				folder = project.GetFolder(_namespace);
+		folderData = project.GetFolder(_namespace + @"\Datas");
+		
+		string __f = string.Format("{0}.sql", targetFilename);
+		using(ScriptFileScope f = manager.NewFile(__f, folderData))
+        {
+
+			f.PostSynchro = actNone;
+
+			// load datas			
+			reader.AppendStructure(ctx);
+			XElement xml = XElement.Load(filename);
+			SqlDataList datas = new SqlDataList(xml, ctx);
+
+
+			string[] environments = datas.Environments;
+
+			foreach (SqlDataBlock table in datas.Tables)
+			{		    
+
+				CodeWriter sql = new CodeWriter();
+				BlockWriter _block = null;
+				string tableName = table.Name.Substring("table".Length);
+				string target = "trg_" + tableName;
+				string source = "src_" + tableName;
+				string[] Primaries = table.Primaries.ToArray();
+				string[] columns = table.Columns.ToArray();	//.Where(c => !Primaries.Contains(c)).ToArray();
+				string[][] values = table.GetValues();
+
+				string cols = string.Empty;
+				foreach (var item in columns)
+					cols += string.Format(", [{0}]", item);
+				cols = cols.Trim(',', ' ');
+
+				string comma;
+				string comma2;
+
+				//System.Diagnostics.Debugger.Launch();
+				//System.Diagnostics.Debugger.Break();
+
+				if (environments.Length > 0)
+				{
+					sql.Write("IF ");
+					comma = string.Empty;
+					foreach (var item in environments)
+					{
+						 sql.Format("{0} N'$({1})' = N'True'", comma, item);
+						comma = "OR ";
+					}
+					sql.WriteEmtyLine();
+					_block = sql.Block("BEGIN", "END");
+				}
+
+				if (table.IsIdentity)
+				{
+					sql.FormatLine("SET IDENTITY_INSERT [{0}].[{1}] ON;", _namespace, tableName);
+					sql.WriteEmtyLine();
+                }
+
+				sql.FormatLine("MERGE INTO [{0}].[{1}] AS [{2}] USING", _namespace, tableName, target);
+				using(sql.Block("(", ")"))
+				{
+					sql.Write("VALUES");
+					using(sql.Block(string.Empty, string.Empty))
+					{
+						comma = " ";
+						foreach (string[] line in values)
+						{
+							sql.Write(comma);
+							sql.Write("(");
+			
+							comma2 = string.Empty;
+							foreach (string c in line)
+							{
+								sql.Format("{0}{1}", comma2, c);
+								comma2 = ", ";
+							}
+
+							sql.WriteLine(")");
+							comma = ",";
+						}
+					}
+				}
+
+
+				sql.FormatLine("AS [{0}] ({2}) ON ", source, target, cols);
+				comma = string.Empty;
+				foreach (var item in Primaries)
+				{
+					sql.FormatLine("	{4}[{0}].[{2}] = [{1}].[{3}]", source, target, "Id", "Id", comma);
+					comma = "AND";
+				}
+	
+
+				sql.WriteEmtyLine();
+				sql.WriteComment("update matched rows");
+				sql.WriteLine("WHEN MATCHED THEN ");
+				sql.WriteLine("UPDATE SET");
+				comma = "  ";
+				foreach (var item in columns.Where(c => !Primaries.Contains(c)))
+				{
+					sql.FormatLine("	{2}[{0}] = [{1}].[{0}]", item, source, comma);	// On itere sur la liste de columns
+					comma = ",";
+				}
+
+
+				sql.WriteEmtyLine();
+				sql.WriteComment("insert new rows ");
+				sql.WriteLine("WHEN NOT MATCHED BY TARGET THEN");
+				sql.FormatLine("	INSERT ({0}) VALUES ({0}) ", cols);
+
+
+				sql.WriteEmtyLine();
+				sql.WriteComment("delete rows that are in the target but not the source ");
+				sql.WriteLine("WHEN NOT MATCHED BY SOURCE THEN DELETE;");
+
+
+				if (table.IsIdentity)
+				{
+					sql.WriteEmtyLine();
+					sql.FormatLine("SET IDENTITY_INSERT [{0}].[{1}] OFF;", _namespace, tableName);
+                }
+
+				if (_block != null)
+					_block.Dispose();
+
+				WriteLine(sql.ToString());
+
+			}
+		}
+    }
+
+
+	using(ManagerScope manager = ScopeHelper.StartManager())
+    {
+		manager.SetFilterToDelete(c => false);
+		// Rebuild the global post deployment process
+		string __f = string.Format("Datas.sql", targetFilename);
+		using(var f = manager.NewFile(__f, folderData))
+        {
+
+			f.PostSynchro = actNone;
+
+			WriteLine("-- List of referentials of datas");
+			WriteLine(string.Empty);
+            foreach (NodeItem item in folderData.GetItem<NodeItem>())
+				if (item.Name != "Datas.generated.sql")
+					WriteLine(string.Format(@":r .\{0}", item.Name));
+        }
+  
+		__f = string.Format("PostDeployment.sql", targetFilename);
+		using(var f = manager.NewFile(__f, project, string.Empty))
+        {
+			f.PostSynchro = actPostDeployment;
+			WriteLine(@":r dbo\Datas\Datas.Generated.sql");
+        }
+    }
+	
+		
+
+#>
+<#+ 
+
+	public class BlockWriter : CodeWriter
+	{
+
+		private string end;
+
+		internal BlockWriter(CodeWriter codeWriter, string start, string end)
+			: base(codeWriter)
+        {
+			this.end = end;
+			this.sb.WriteLine(start);
+            this.sb.Indent++;
+
+        }
+
+		public override void Dispose()
+        {
+			base.Dispose();
+			sb.WriteLine(this.end);
+        }
+
+	}
+
+    public class CodeWriter : IDisposable
+    {
+
+        /// <summary>
+        /// </summary>
+        protected readonly IndentedTextWriter sb;
+
+        private MemoryStream stream;
+        private StreamWriter streamWr;
+        private CodeWriter parent;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CodeWriter"/> class.
+        /// </summary>
+        public CodeWriter()
+        {
+            this.stream = new MemoryStream();
+            this.streamWr = new StreamWriter(stream);
+            this.sb = new System.CodeDom.Compiler.IndentedTextWriter(streamWr);
+        }
+
+		public BlockWriter Block(string start, string end)
+        {
+			return new BlockWriter(this, start, end);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CodeWriter"/> class.
+        /// </summary>
+        /// <param name="codeWriter">The code writer.</param>
+        /// <param name="args">The arguments.</param>
+        protected CodeWriter(CodeWriter codeWriter)
+        {
+            this.parent = codeWriter;
+            this.sb = codeWriter.sb;
+        }
+
+
+
+
+
+        /// <summary>
+        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="System.String" /> that represents this instance.
+        /// </returns>
+        public override string ToString()
+        {
+            this.sb.Flush();
+            this.streamWr.Flush();
+            stream.Flush();
+            byte[] datas = stream.ToArray();
+            return System.Text.Encoding.UTF8.GetString(datas);
+        }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        public virtual void Dispose()
+        {
+            if (this.parent != null)
+                this.sb.Indent--;
+        }
+
+        /// <summary>
+        /// append text in the output
+        /// </summary>
+        /// <param name="format">The format.</param>
+        /// <param name="args">The arguments.</param>
+        public void Format(string format, params object[] args)
+        {
+            var txt = string.Format(format, args)
+                .Replace("  ", " ")
+                .Replace("  ", " ")
+                .Replace("  ", " ")
+                ;
+            sb.Write(txt);
+        }
+
+        /// <summary>
+        /// append text in the output
+        /// </summary>
+        /// <param name="format">The format.</param>
+        /// <param name="args">The arguments.</param>
+        public void FormatLine(string format, params object[] args)
+        {
+            var txt = string.Format(format, args)
+                .Replace("  ", " ")
+                .Replace("  ", " ")
+                .Replace("  ", " ")
+                ;
+
+            sb.WriteLine(txt);
+        }
+
+        /// <summary>
+        /// append new text in the output
+        /// </summary>
+        /// <param name="txt">The v.</param>
+        public void Write(string txt)
+        {
+            sb.Write(txt);
+        }
+
+		public void WriteEmtyLine()
+        {
+            sb.WriteLine(string.Empty);
+        }
+
+        /// <summary>
+        /// append text in the output
+        /// </summary>
+        /// <param name="txt">The text.</param>
+        public void WriteLine(string txt)
+        {
+            sb.WriteLine(txt);
+        }
+
+        /// <summary>
+        /// append empty line in the output
+        /// </summary>
+        public void WriteLine()
+        {
+            sb.WriteLine();
+        }
+        
+        /// <summary>
+        /// Writes the comment.
+        /// </summary>
+        /// <param name="balise">The v.</param>
+        /// <param name="summary">The summary.</param>
+        /// <param name="attributeName">Name of the attribute.</param>
+        /// <param name="attributeValue">The attribute value.</param>
+        public void WriteComment(string comment)
+        {
+
+           FormatLine("-- {0}", comment);
+          
+        }
+    
+}
+
+public static string Header()
+{
+
+	return @"/*
+ *	<auto-generated>									
+ *                     									
+ *	This code was generated from a template launched by Model driven for more 
+ *	information see http://devtm.fr
+ *  Tool created by Gael beard mailto:gaelgael5@gmail.com Copyright 2015
+ *                     									
+ *	Changes to this file may cause incorrect behavior and will be lost if the 
+ *  code is regenerated.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the ""License""). You may not use 
+ *  this file except in compliance with the License. You may obtain a copy of the 
+ *  License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software distributed
+ *  under the License is distributed on an ""AS IS"" BASIS, WITHOUT WARRANTIES OR 
+ *  CONDITIONS OF ANY KIND, either express or implied. See the License for the 
+ *  specific language governing permissions and limitations under the License.
+ *		
+ *	</auto-generated>                  					
+ */
+		";
+}
+
+
+
+
+
+    public class SqlData
+    {
+
+        protected readonly DataContext ctx;
+
+        public SqlData(DataContext ctx)
+        {
+            this.ctx = ctx;
+        }
+
+        protected string ReadAttribute(XElement node, string attributeName)
+        {
+            var attr = node.Attribute(attributeName);
+            if (attr != null)
+                return attr.Value ?? string.Empty;
+            return null;
+        }
+
+    }
+
+    public class SqlDataList : SqlData
+    {
+
+        private string inherit;
+
+        public SqlDataList(XElement datas, DataContext ctx)
+            : base(ctx)
+        {
+
+            this.Tables = new List<SqlDataBlock>();
+            this.Script = ReadAttribute(datas, "script");
+            this.inherit = ReadAttribute(datas, "inherit");
+            this.Environments = ReadAttribute(datas, "environment").Split(';', ',', '|');
+
+            if (this.inherit == null)
+            {
+                var a = ctx.Get("db");
+                PropertyXml i = a.Properties["inherit"];
+                if (i != null)
+                    this.inherit = i.Default;
+            }
+
+            if (!string.IsNullOrEmpty(this.inherit))
+            {
+                string path = ctx.GetFullPath(this.inherit);
+                if (File.Exists(path))
+                {
+                    var datas2 = XElement.Load(path);
+                    var d2 = new SqlDataList(datas2, ctx);
+
+                    foreach (var table in d2.Tables)
+                        this.Tables.Add(table);
+
+                }
+            }
+
+            foreach (XElement item in datas.Elements())
+            {
+
+                var name = item.Name.LocalName;
+                SqlDataBlock sql = this.Tables.FirstOrDefault(c => c.Name == name);
+
+                if (sql == null)
+                {
+                    sql = new SqlDataBlock(item, ctx);
+                    this.Tables.Add(sql);
+                }
+
+                sql.Parse(item);
+
+            }
+
+        }
+
+        public string[] Environments { get; private set; }
+
+        public string Script { get; private set; }
+
+        public List<SqlDataBlock> Tables { get; private set; }
+
+    }
+
+    [System.Diagnostics.DebuggerDisplay("Table {Name}")]
+    public class SqlDataBlock : SqlData
+    {
+
+        private XmlType Type;
+
+        public SqlDataBlock(XElement datas, DataContext ctx)
+            : base(ctx)
+        {
+
+            this.Lines = new List<SqlDataItem>();
+            this.Name = datas.Name.LocalName;
+        }
+
+        public void Parse(XElement datas)
+        {
+
+            this.Type = ctx.Get(datas.Name.Namespace.NamespaceName, datas.Name.LocalName);
+
+
+            foreach (XElement item in datas.Elements())
+            {
+
+                if (item.Name.LocalName != "PrimaryKeys")
+                {
+
+                    HashSet<string> _cols = new HashSet<string>();
+
+                    SqlDataItem sql = new SqlDataItem(item, ctx, this.Type);
+                    this.Lines.Add(sql);
+
+                    foreach (var col in sql.Columns)
+                        _cols.Add(col.Key);
+
+                    this.Columns = new List<string>(_cols);
+
+                }
+                else
+                {
+
+                    HashSet<string> _keys = new HashSet<string>();
+                    this.IsIdentity = false;
+
+                    foreach (XElement item2 in item.Elements())
+                    {
+                        string isIdentity = ReadAttribute(item2, "identity");
+                        if (isIdentity == "true" || isIdentity == "1")
+                            this.IsIdentity = true;
+
+                        _keys.Add(ReadAttribute(item2, "key"));
+                    }
+
+                    this.Primaries = new List<string>(_keys);
+
+                }
+
+            }
+        }
+
+        public bool IsIdentity { get; private set; }
+
+        public string Name { get; private set; }
+
+        public List<SqlDataItem> Lines { get; private set; }
+
+        public IEnumerable<string> Primaries { get; private set; }
+
+        public IEnumerable<string> Columns { get; private set; }
+
+        public string[][] GetValues()
+        {
+
+            string[][] result = new string[this.Lines.Count][];
+
+            int indexLine = 0;
+            int colCount = this.Columns.Count();
+
+            foreach (SqlDataItem item in this.Lines)
+            {
+
+                string[] values = new string[colCount];
+
+                int indexCol = 0;
+                foreach (string colName in this.Columns)
+                {
+                    string _datas;
+                    SqlDataColumn data;
+
+                    if (item.Columns.TryGetValue(colName, out data))
+                    {
+
+                        _datas = data.Value;
+
+                        switch (data.Type.Type)
+                        {
+
+                            case TypeEnum.@string:
+                            case TypeEnum.anyURI:
+                            case TypeEnum.date:
+                            case TypeEnum.dateTime:
+                            case TypeEnum.duration:
+                            case TypeEnum.Name:
+                            case TypeEnum.NCName:
+                            case TypeEnum.normalizedString:
+                            case TypeEnum.NOTATION:
+                            case TypeEnum.QName:
+                                _datas = _datas.Replace("'", @"''").Replace("ʼ", "''");
+                                _datas = string.Format(@"N'{0}'", _datas);
+                                break;
+
+                            case TypeEnum.boolean:
+                                break;
+
+                            case TypeEnum.base64Binary:
+                                break;
+                            case TypeEnum.@byte:
+                                break;
+                            case TypeEnum.ENTITIES:
+                                break;
+                            case TypeEnum.ENTITY:
+                                break;
+                            case TypeEnum.gMonthDay:
+                                break;
+                            case TypeEnum.gYearMonth:
+                                break;
+                            case TypeEnum.hexBinary:
+                                break;
+                            case TypeEnum.ID:
+                                break;
+                            case TypeEnum.IDREF:
+                                break;
+                            case TypeEnum.IDREFS:
+                                break;
+                            case TypeEnum.language:
+                                break;
+                            case TypeEnum.NMTOKEN:
+                                break;
+                            case TypeEnum.NMTOKENS:
+                                break;
+                            case TypeEnum.@short:
+                                break;
+                            case TypeEnum.time:
+                                break;
+                            case TypeEnum.token:
+                                break;
+
+                            case TypeEnum.@int:
+                            case TypeEnum.integer:
+                            case TypeEnum.@decimal:
+                            case TypeEnum.@double:
+                            case TypeEnum.@float:
+                            case TypeEnum.gDay:
+                            case TypeEnum.gMonth:
+                            case TypeEnum.gYear:
+                            case TypeEnum.@long:
+                            case TypeEnum.negativeInteger:
+                            case TypeEnum.nonNegativeInteger:
+                            case TypeEnum.nonPositiveInteger:
+                            case TypeEnum.positiveInteger:
+                            case TypeEnum.unsignedByte:
+                            case TypeEnum.unsignedInt:
+                            case TypeEnum.unsignedLong:
+                            case TypeEnum.unsignedShort:
+                            default:
+                                break;
+
+                        }
+
+
+                    }
+
+                    else
+                    {
+                        _datas = "NULL";
+                    }
+
+
+                    values[indexCol++] = _datas;
+                }
+
+                result[indexLine++] = values;
+
+            }
+
+            return result;
+
+        }
+
+    }
+
+    [System.Diagnostics.DebuggerDisplay("Line {Name}")]
+    public class SqlDataItem : SqlData
+    {
+
+        public SqlDataItem(XElement datas, DataContext ctx, XmlType type)
+            : base(ctx)
+        {
+
+            this.Columns = new Dictionary<string, SqlDataColumn>();
+            this.Name = datas.Name.LocalName;
+
+            PropertyXml property;
+            type.Properties.TryGetValue(this.Name, out property);
+
+            XmlType _type = property.TypeClass;
+
+            foreach (XAttribute item in datas.Attributes())
+            {
+                PropertyXml p;
+                string name = item.Name.LocalName;
+                _type.Properties.TryGetValue(name, out p);
+                this.Columns.Add(name, new SqlDataColumn(item.Name.LocalName, p.Type, item.Value));
+            }
+
+        }
+
+        public string Name { get; private set; }
+
+        public Dictionary<string, SqlDataColumn> Columns { get; private set; }
+
+    }
+
+    public class SqlDataColumn
+    {
+
+        public string Name { get; private set; }
+
+        public string Value { get; private set; }
+
+        public XmlSimpleType Type { get; private set; }
+
+        public SqlDataColumn(string localName, XmlSimpleType type, string value)
+        {
+            this.Name = localName;
+            this.Value = value;
+            this.Type = type;
+        }
+
+    }
+
+
+
+
+
+	public class _XmlAttributeCollection : IEnumerable<AttributeXml>
+    {
+
+        private Dictionary<string, AttributeXml> _attributes = new Dictionary<string, AttributeXml>();
+
+        public bool IsEmpty { get { return !_attributes.Any(); } }
+
+        public _XmlAttributeCollection()
+        {
+        }
+
+        internal void Add(XmlTextReader reader)
+        {
+
+            string value = string.Empty;
+            var name = reader.Name;
+            var namespaceURI = reader.NamespaceURI;
+            if (reader.HasValue)
+                value = reader.Value;
+
+            AttributeXml attr = new AttributeXml(namespaceURI, name, value);
+            _attributes.Add(name, attr);
+
+            if (!string.IsNullOrEmpty(namespaceURI))
+                _attributes.Add(namespaceURI + ":" + name, attr);
+
+        }
+
+        public AttributeXml GetAttribute(string name)
+        {
+            AttributeXml result;
+            _attributes.TryGetValue(name, out result);
+            return result;
+        }
+
+        public string GetAttributeValue(string name)
+        {
+            AttributeXml result;
+            if (_attributes.TryGetValue(name, out result))
+                return result.Value;
+            return string.Empty;
+        }
+
+        public IEnumerator<AttributeXml> GetEnumerator()
+        {
+            return this._attributes.Values.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this._attributes.Values.GetEnumerator();
+        }
+    }
+
+	public class AttributeXml
+    {
+
+        public string Name { get; private set; }
+        public string NamespaceURI { get; private set; }
+        public string Value { get; private set; }
+
+        public AttributeXml(string namespaceURI, string name, string value)
+        {
+            this.NamespaceURI = namespaceURI;
+            this.Name = name;
+            this.Value = value;
+        }
+    }
+
+	public class DataContext
+    {
+
+        Dictionary<string, XmlSimpleType> types2 = new Dictionary<string, XmlSimpleType>();
+        Dictionary<string, XmlType> types = new Dictionary<string, XmlType>();
+        private HashSet<string> TargetNamespace;
+        private string root;
+
+        public DataContext(string root)
+        {
+            this.root = root;
+        }
+
+        internal Dictionary<string, TargetNamespaceContext> TargetNamespaces { get; private set; }
+
+        internal XmlType Get(XmlSchemaComplexType xml, string TargetNamespace)
+        {
+            XmlType t = Get(TargetNamespace, xml.Name);
+            t.Initialize(xml);
+
+            return t;
+        }
+
+        internal XmlType Get(XmlSchemaElement xml)
+        {
+            XmlType t = Get(xml.SchemaTypeName.Namespace, xml.SchemaTypeName.Name);
+            return t;
+        }
+
+        public XmlType Get(string name)
+        {
+            foreach (var item in TargetNamespaces)
+            {
+                var result = item.Value.GetItem(name);
+                if (result != null)
+                    return result;
+            }
+            return null;
+        }
+
+        public XmlType Get(string TargetNamespace, string name)
+        {
+            string fullname = TargetNamespace + ":" + name;
+
+            XmlType t;
+            if (!types.TryGetValue(fullname, out t))
+            {
+                t = new XmlType(TargetNamespace, name);
+                types.Add(fullname, t);
+            }
+
+            return t;
+        }
+
+        internal void AppendTargetNamespace(string targetNamespace)
+        {
+            if (this.TargetNamespace == null)
+                this.TargetNamespace = new HashSet<string>();
+            this.TargetNamespace.Add(targetNamespace);
+        }
+
+        private _XmlAttributeCollection CollectAttributes(XmlTextReader reader)
+        {
+            _XmlAttributeCollection attributes = new _XmlAttributeCollection();
+            if (reader.MoveToFirstAttribute())
+            {
+                attributes.Add(reader);
+                while (reader.MoveToNextAttribute())
+                    attributes.Add(reader);
+            }
+            return attributes;
+        }
+
+        internal void AppendRootItem(string name, XmlType element)
+        {
+            TargetNamespaceContext targetNamespacecontext;
+
+            if (this.TargetNamespaces == null)
+                this.TargetNamespaces = new Dictionary<string, TargetNamespaceContext>();
+
+            if (!this.TargetNamespaces.TryGetValue(element.Namespace, out targetNamespacecontext))
+            {
+                targetNamespacecontext = new TargetNamespaceContext(element.Namespace);
+                this.TargetNamespaces.Add(element.Namespace, targetNamespacecontext);
+            }
+
+            targetNamespacecontext.AppendRootItem(name, element);
+
+        }
+
+        internal XmlSimpleType Get(XmlSchemaSimpleType xml, string targetNamespace)
+        {
+
+            string name = targetNamespace + ":" + xml.Name;
+            XmlSimpleType t;
+
+            if (types2.TryGetValue(name, out t))
+                return t;
+
+            t = new XmlSimpleType(targetNamespace, xml.Name);
+            types2.Add(name, t);
+            t.Initialize(xml.Content);
+            return t;
+
+        }
+
+        internal XmlSimpleType Get(XmlSchemaAttribute xml)
+        {
+
+            string name = xml.SchemaTypeName.Namespace + ":" + xml.SchemaTypeName.Name;
+            XmlSimpleType t;
+
+            if (types2.TryGetValue(name, out t))
+                return t;
+
+            t = new XmlSimpleType(xml.SchemaTypeName.Namespace, xml.SchemaTypeName.Name);
+            types2.Add(name, t);
+            return t;
+
+        }
+
+		public string GetFullPath(string inherit)
+        {
+
+            var a = inherit.Substring(0, inherit.LastIndexOf('\\')).Trim('\\');
+
+            if (this.root.EndsWith(a))
+            {
+                a = inherit.Substring(inherit.LastIndexOf('\\')).Trim('\\');
+                return System.IO.Path.Combine(this.root, a);
+            }
+            else
+                return System.IO.Path.Combine(this.root, inherit);
+        }
+
+    }
+
+	public class PropertyXml
+    {
+
+
+        public XmlType TypeClass { get; private set; }
+        public XmlSimpleType Type { get; private set; }
+
+        public string Name { get; private set; }
+        public bool Required { get; internal set; }
+        public bool IsArray { get; internal set; }
+        public bool IsClass { get; private set; }
+        public string Default { get; internal set; }
+
+        public PropertyXml(string name, XmlSimpleType type1)
+        {
+            this.Name = name;
+            this.Type = type1;
+        }
+
+        public PropertyXml(string name, XmlType type)
+        {
+            this.Name = name;
+            this.TypeClass = type;
+            this.IsClass = true;
+        }
+    }
+
+	public class SchemaReader
+    {
+
+        private XmlSchema schema;
+        private Stack<XmlType> types = new Stack<XmlType>();
+        private string filename;
+
+        public string TargetNamespace { get; private set; }
+
+        public SchemaReader(string filename)
+        {
+
+            try
+            {
+                this.filename = filename;
+                XmlTextReader reader = new XmlTextReader(filename);
+                this.schema = XmlSchema.Read(reader, validationCallback);
+                this.TargetNamespace = this.schema.TargetNamespace;
+            }
+            catch (Exception e)
+            {
+                string f = e.Message;
+                throw;
+            }
+
+        }
+
+        public void AppendStructure(DataContext ctx)
+        {
+            PreAnalyze(ctx);
+            Visit(ctx);
+            ctx.AppendTargetNamespace(this.TargetNamespace);
+        }
+
+        private void PreAnalyze(DataContext ctx)
+        {
+
+            foreach (XmlSchemaObject table in schema.Items)
+            {
+
+                string type = table.GetType().Name.ToLower();
+
+                switch (type)
+                {
+
+                    case "xmlschemacomplextype":
+                        ctx.Get(table as XmlSchemaComplexType, this.TargetNamespace);
+                        break;
+
+                    case "xmlschemaelement":
+                        var t = table as XmlSchemaElement;
+                        XmlType element = ctx.Get(t);
+                        ctx.AppendRootItem(t.Name, element);
+
+                        break;
+
+                    case "xmlschemasimpletype":
+                        ctx.Get(table as XmlSchemaSimpleType, this.TargetNamespace);
+                        break;
+
+                    default:
+                        break;
+                }
+
+            }
+        }
+
+        private void Visit(DataContext ctx)
+        {
+
+            var cls = ctx.Get(this.TargetNamespace, "schema");
+
+            types.Push(cls);
+
+            foreach (XmlSchemaObject table in schema.Items)
+                Visit(table, ctx);
+
+            types.Pop();
+
+        }
+
+        private void Visit(object item, DataContext ctx)
+        {
+            string type = item.GetType().Name.ToLower();
+
+            switch (type)
+            {
+
+                case "xmlschemacomplextype":
+                    Parse(item as XmlSchemaComplexType, ctx);
+                    break;
+
+                case "xmlschemaelement":
+                    Parse(item as XmlSchemaElement, ctx);
+                    break;
+
+                case "xmlschemasequence":
+                    Parse(item as XmlSchemaSequence, ctx);
+                    break;
+
+                case "xmlschemaattribute":
+                    Parse(item as XmlSchemaAttribute, ctx);
+                    break;
+
+                default:
+                    break;
+
+            }
+        }
+
+        private void Parse(XmlSchemaAttribute xml, DataContext ctx)
+        {
+            var cls = types.Peek();
+            var n = xml.Name;
+            var n2 = xml.SchemaTypeName;
+            var type = ctx.Get(xml);
+
+            PropertyXml property = cls.AddProperty(n, type);
+
+            if (xml.Use == XmlSchemaUse.Required)
+                property.Required = true;
+
+            property.Default = xml.DefaultValue;
+
+        }
+
+        private void Parse(XmlSchemaSequence xml, DataContext ctx)
+        {
+            foreach (XmlSchemaObject item in xml.Items)
+                Visit(item, ctx);
+        }
+
+        private void Parse(XmlSchemaComplexType item, DataContext ctx)
+        {
+            var n = item.Name;
+
+            var cls = ctx.Get(item, this.TargetNamespace);
+            types.Push(cls);
+
+            if (item.Particle != null)
+                Visit(item.Particle, ctx);
+
+            foreach (XmlSchemaAttribute attr in item.Attributes)
+                Visit(attr, ctx);
+
+            types.Pop();
+
+        }
+
+        private void Parse(XmlSchemaElement xml, DataContext ctx)
+        {
+            var n = xml.Name;
+            var cls = types.Peek();
+            var type = ctx.Get(xml);
+            PropertyXml property = cls.AddProperty(n, type);
+
+            if (xml.MinOccurs > 0)
+                property.Required = true;
+
+            if (xml.MaxOccurs > 1)
+                property.IsArray = true;
+
+        }
+
+        private void validationCallback(object sender, ValidationEventArgs e)
+        {
+            if (e.Severity == XmlSeverityType.Warning)
+            {
+
+
+            }
+            else if (e.Severity == XmlSeverityType.Error)
+            {
+
+            }
+        }
+
+    }
+
+	internal class TargetNamespaceContext
+    {
+        private Dictionary<string, XmlType> elements;
+
+        public string TargetNamespace { get; set; }
+
+        public TargetNamespaceContext(string targetNamespace)
+        {
+            this.TargetNamespace = targetNamespace;
+        }
+
+        internal void AppendRootItem(string name, XmlType type)
+        {
+
+            XmlType element;
+
+            if (this.elements == null)
+                this.elements = new Dictionary<string, XmlType>();
+
+            if (!this.elements.TryGetValue(name, out element))
+            {
+                this.elements.Add(name, type);
+            }
+            else
+            {
+
+            }
+
+        }
+
+        public XmlType GetItem(string name)
+        {
+
+            XmlType element;
+
+            if (this.elements == null)
+                this.elements = new Dictionary<string, XmlType>();
+
+            this.elements.TryGetValue(name, out element);
+
+            return element;
+
+        }
+
+    }
+	
+    public class XmlSimpleType
+    {
+
+
+        private HashSet<string> _enums = new HashSet<string>();
+
+        public XmlSimpleType(string targetNamespace, string name)
+        {
+            this.TargetNamespace = targetNamespace;
+            this.Name = name;
+
+            SetType(this.Name);
+
+        }
+
+        private void SetType(string name)
+        {
+
+            TypeEnum e;
+            if (Enum.TryParse<TypeEnum>(name, out e))
+                this.Type = e;
+
+        }
+
+        public XmlQualifiedName BaseTypeName { get; private set; }
+        public string Name { get; private set; }
+
+        public string TargetNamespace { get; private set; }
+
+        internal void Initialize(object content)
+        {
+
+            string type = content.GetType().Name.ToLower();
+
+            switch (type)
+            {
+
+                case "xmlschemasimpletyperestriction":
+                    Parse(content as XmlSchemaSimpleTypeRestriction);
+                    break;
+
+                case "xmlschemapatternfacet":
+                    Parse(content as XmlSchemaPatternFacet);
+                    break;
+
+                case "xmlschemamaxlengthfacet":
+                    Parse(content as XmlSchemaMaxLengthFacet);
+                    break;
+
+                case "xmlschemaenumerationfacet":
+                    Parse(content as XmlSchemaEnumerationFacet);
+                    break;
+
+                default:
+                    break;
+
+
+
+            }
+
+        }
+
+        private void Parse(XmlSchemaEnumerationFacet xmlSchemaEnumerationFacet)
+        {
+            _enums.Add(xmlSchemaEnumerationFacet.Value);
+        }
+
+        private void Parse(XmlSchemaSimpleTypeRestriction node)
+        {
+
+            if (node.BaseTypeName != null)
+            {
+                this.BaseTypeName = node.BaseTypeName;
+                SetType(this.BaseTypeName.Name);
+            }
+
+            foreach (var item in node.Facets)
+                Initialize(item);
+
+        }
+
+        private void Parse(XmlSchemaMaxLengthFacet node)
+        {
+            var length = node.Value;
+        }
+
+
+        private void Parse(XmlSchemaPatternFacet node)
+        {
+            string pattern = node.Value;
+        }
+
+
+        public TypeEnum Type { get; private set; }
+
+    }
+
+    public enum TypeEnum
+    {
+        _Undefined,
+        anyURI,
+        base64Binary,
+        boolean,
+        @byte,
+        date,
+        dateTime,
+        @decimal,
+        @double,
+        duration,
+        ENTITIES,
+        ENTITY,
+        @float,
+        gDay,
+        gMonth,
+        gMonthDay,
+        gYear,
+        gYearMonth,
+        hexBinary,
+        ID,
+        IDREF,
+        IDREFS,
+        @int,
+        @integer,
+        language,
+        @long,
+        Name,
+        NCName,
+        negativeInteger,
+        NMTOKEN,
+        NMTOKENS,
+        nonNegativeInteger,
+        nonPositiveInteger,
+        normalizedString,
+        NOTATION,
+        positiveInteger,
+        QName,
+        @short,
+        @string,
+        time,
+        token,
+        unsignedByte,
+        unsignedInt,
+        unsignedLong,
+        unsignedShort,
+
+    }
+
+	[System.Diagnostics.DebuggerDisplay("{Namespace}:{Name}")]
+    public class XmlType
+    {
+        public XmlType(string _namespace, string type)
+        {
+            this.Name = type;
+            this.Namespace  = _namespace;
+            this.Properties = new Dictionary<string, PropertyXml>();
+        }
+
+        internal void Initialize(XmlSchemaComplexType xml)
+        {
+            
+        }
+
+        public string Name { get; private set; }
+        public string Namespace { get; private set; }
+        public Dictionary<string, PropertyXml> Properties { get; private set; }
+
+        internal PropertyXml AddProperty(string n, XmlType type)
+        {
+            PropertyXml t;
+            if (!this.Properties.TryGetValue(n, out t))
+            {
+                t = new PropertyXml(n, type);
+                this.Properties.Add(n, t);
+            }
+            return t;
+        }
+
+        internal PropertyXml AddProperty(string n, XmlSimpleType type)
+        {
+            PropertyXml t;
+            if (!this.Properties.TryGetValue(n, out t))
+            {
+                t = new PropertyXml(n, type);
+                this.Properties.Add(n, t);
+            }
+
+            return t;
+        }
+
+    }
+
+
+
+
+#>

@@ -1,0 +1,1860 @@
+<#@ Assembly Name="Microsoft.CSharp" #>
+<#@ Assembly Name="System" #>
+<#@ Assembly Name="System.Configuration" #>
+<#@ Assembly Name="System.Core" #>
+<#@ Assembly Name="System.Data" #>
+<#@ Assembly Name="System.Data.DataSetExtensions" #>
+<#@ Assembly Name="System.Net.Http" #>
+<#@ Assembly Name="System.Xml" #>
+<#@ Assembly Name="System.Xml.Linq" #>
+<#@ import namespace="bsn.ModuleStore.Sql.Script.Tokens" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Text.RegularExpressions" #>
+<#@ import namespace="System.Threading.Tasks" #>
+<# 
+
+ #>
+<#+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableAddColumnConstraintWriter.cs
+    public class AlterTableAddColumnConstraintWriter : TableWriter<AlterTableAddColumnConstraintStatement>
+    {
+
+        public AlterTableAddColumnConstraintWriter(string schemaName, string tableName, string columnName, bool withCheck) : base(schemaName, tableName)
+        {
+
+            if (!Ddl._validateName.IsMatch(columnName))
+                throw new ArgumentException(string.Format("invalid namespace '{0}'", columnName));
+            
+            this.WithCheck = withCheck;
+            this.ColumnName = columnName;
+
+        }
+
+        public bool WithCheck { get; private set; }
+
+        protected override AlterTableAddColumnConstraintStatement Create()
+        {
+
+            TableCheckToken t = this.WithCheck
+            ? TableCheckToken.GetTableCheckToken()
+            : TableCheckToken.GetTableWithNocheckToken();
+
+            return new AlterTableAddColumnConstraintStatement(GetName(), t, constraint, new ColumnName(this.ColumnName));
+
+        }
+
+        public AlterTableAddColumnConstraintWriter IsRowGuidColumn()
+        {
+            constraint = new ColumnRowguidcolConstraint();
+            return this;
+        }
+
+        public AlterTableAddColumnConstraintWriter ColumnPersisted()
+        {
+            constraint = new ColumnPersistedConstraint();
+            return this;
+        }
+
+        protected AlterTableAddColumnConstraintWriter ColumnNullable()
+        {
+            constraint = new ColumnNullableConstraint();
+            return this;
+        }
+
+        protected AlterTableAddColumnConstraintWriter ColumnNotNullable()
+        {
+            constraint = new ColumnNotNullableConstraint();
+            return this;
+        }
+
+        public AlterTableAddColumnConstraintWriter Identity(long seed = 1, long increment = 1)
+        {
+
+            if (!(seed >=1))
+                throw new ArgumentException(string.Format("invalid seed value '{0}'", seed));
+
+            if (!(increment >= 1))
+                throw new ArgumentException(string.Format("invalid increment value '{0}'", increment));
+
+            constraint = new ColumnIdentityConstraint(seed, increment);
+            return this;
+        }
+
+        public AlterTableAddColumnConstraintWriter Collation(CollationName collation)
+        {
+
+            if (collation == null)
+                throw new NullReferenceException("collation");
+
+            if (string.IsNullOrEmpty(collation.Value))
+                throw new ArgumentException(string.Format("invalid collation '{0}'", collation.Value));
+
+            constraint = new ColumnCollateConstraint(collation);
+            return this;
+        }
+
+        public AlterTableAddColumnConstraintWriter DefaultValue(SqlExpression expression)
+        {
+
+            if (expression == null)
+                throw new NullReferenceException("expression");
+
+            constraint = new ColumnDefaultConstraint(expression);
+            return this;
+        }
+
+        public AlterTableAddColumnConstraintWriter Check(bool replication, SqlPredicate predicate)
+        {
+
+            if (predicate == null)
+                throw new NullReferenceException("constraintIndex");
+
+            ReplicationToken rep = replication
+                ? (ReplicationToken)ReplicationToken.ForReplicationToken()
+                : (ReplicationToken)ReplicationToken.NotForReplicationToken();
+            constraint = new ColumnCheckConstraint(rep, predicate);
+            return this;
+        }
+
+        public AlterTableAddColumnConstraintWriter PrimaryKey(Clustered cluster, ConstraintIndex constraintIndex)
+        {
+            if (constraintIndex == null)
+                throw new NullReferenceException("constraintIndex");
+
+            constraint = new ColumnPrimaryKeyConstraint(new ConstraintClusterToken(), constraintIndex);
+            return this;
+        }
+
+        public AlterTableAddColumnConstraintWriter Unique(Clustered cluster, ConstraintIndex constraintIndex)
+        {
+
+            if (constraintIndex == null)
+                throw new NullReferenceException("constraintIndex");
+
+            if (constraintIndex == null)
+                throw new NullReferenceException("constraintIndex");
+
+            ColumnUniqueConstraint result = new ColumnUniqueConstraint(cluster, constraintIndex);
+            constraint = result;
+            return this;
+        }
+
+        public AlterTableAddColumnConstraintWriter Unique(string constraintName, Clustered cluster, ConstraintIndex constraintIndex)
+        {
+
+            if (!Ddl._validateName.IsMatch(constraintName))
+                throw new ArgumentException(string.Format("invalid constraint name '{0}'", constraintName));
+
+            if (constraintIndex == null)
+                throw new NullReferenceException("predicate");
+
+            ConstraintName _constraintName = new ConstraintName(constraintName);
+            ColumnUniqueConstraint result = new ColumnUniqueConstraint(constraintName, cluster, constraintIndex);
+            constraint = result;
+
+            return this;
+
+        }
+
+        public AlterTableAddColumnConstraintWriter ForeignKey(CreateTableWriter table, Optional<ColumnName> refColumnName, params ForeignKeyAction[] foreignKeyAction)
+        {
+
+            if (table == null)
+                throw new NullReferenceException("table");
+
+            if (refColumnName == null)
+                throw new NullReferenceException("refColumnName");
+
+            Qualified<SchemaName, TableName> tableName = new Qualified<SchemaName, TableName>(table.Schema, table.TableName);
+            ColumnForeignKeyConstraint result = new ColumnForeignKeyConstraint(tableName, refColumnName, Sequence<ForeignKeyAction>.Convert(foreignKeyAction));
+            constraint = result;
+            return this;
+        }
+
+        public AlterTableAddColumnConstraintWriter ForeignKey(string constraintName, CreateTableWriter table, Optional<ColumnName> refColumnName, params ForeignKeyAction[] keyActions)
+        {
+
+            if (!Ddl._validateName.IsMatch(constraintName))
+                throw new ArgumentException(string.Format("invalid constraint name '{0}'", constraintName));
+
+            if (table == null)
+                throw new NullReferenceException(string.Format("invalid '{0}'", "table"));
+
+            if (refColumnName == null)
+                throw new NullReferenceException("refColumnName");
+
+            ConstraintName _constraintName = new ConstraintName(constraintName);
+            Qualified<SchemaName, TableName> tableName = new Qualified<SchemaName, TableName>(table.Schema, table.TableName);
+            ColumnForeignKeyConstraint result = new ColumnForeignKeyConstraint(_constraintName, tableName, refColumnName, Sequence<ForeignKeyAction>.Convert(keyActions));
+            constraint = result;
+            return this;
+        }
+
+        private ColumnConstraint constraint;
+        public readonly string ColumnName;
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableAddColumnConstraintWriter.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableAddWriter.cs
+    public class AlterTableAddWriter : TableWriter<AlterTableAddStatement>
+    {
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AlterTableAddWriter"/> class.
+        /// </summary>
+        /// <param name="schemaName">Name of the schema.</param>
+        /// <param name="tableName">Name of the table.</param>
+        /// <param name="withCheck">if set to <c>true</c> [with check].</param>
+        public AlterTableAddWriter(string schemaName, string tableName, bool withCheck) : base(schemaName, tableName)
+        {
+            this.WithCheck = withCheck;
+        }
+
+        public bool WithCheck { get; private set; }
+
+        protected override AlterTableAddStatement Create()
+        {
+
+            TableCheckToken t = this.WithCheck
+                ? TableCheckToken.GetTableCheckToken()
+                : TableCheckToken.GetTableWithNocheckToken();
+
+            List<TableDefinition> defs = new List<TableDefinition>();
+
+            
+            foreach (var item in this._columns)
+                defs.Add(item.Value.Create());
+
+            foreach (var item in this.tableDefinitions)
+                defs.Add(item);
+
+            return new AlterTableAddStatement(GetName(), t, Sequence<TableDefinition>.Convert(defs));
+
+        }
+
+        /// <summary>
+        /// Creates the column.
+        /// </summary>
+        /// <param name="columnName">Name of the column.</param>
+        /// <param name="type">The type.</param>
+        /// <param name="nullable">if set to <c>true</c> [nullable].</param>
+        /// <returns></returns>
+        public TypedColumnWriter CreateColumn(string columnName, Qualified<SchemaName, TypeName> type, bool nullable)
+        {
+
+            ColumnWriter col;
+            if (!_columns.TryGetValue(columnName, out col))
+            {
+                col = new TypedColumnWriter(columnName, type, nullable);
+                this._columns.Add(columnName, col);
+            }
+
+            return col as TypedColumnWriter;
+
+        }
+
+        /// <summary>
+        /// Creates the computed column.
+        /// </summary>
+        /// <param name="columnName">Name of the column.</param>
+        /// <param name="type">The type.</param>
+        /// <param name="nullable">if set to <c>true</c> [nullable].</param>
+        /// <returns></returns>
+        public ComputedColumnWriter CreateComputedColumn(string columnName, Qualified<SchemaName, TypeName> type, bool nullable)
+        {
+
+            ColumnWriter col;
+            if (!_columns.TryGetValue(columnName, out col))
+            {
+                col = new TypedColumnWriter(columnName, type, nullable);
+                this._columns.Add(columnName, col);
+            }
+
+            return col as ComputedColumnWriter;
+        }
+
+
+        /// <summary>
+        /// Uniques the index.
+        /// </summary>
+        /// <param name="constraintName">Name of the constraint.</param>
+        /// <param name="cluster">The cluster.</param>
+        /// <param name="constraint">The constraint.</param>
+        /// <param name="indexes">The indexes.</param>
+        /// <returns></returns>
+        public AlterTableAddWriter UniqueIndex(string constraintName, Clustered cluster, ConstraintIndex constraint, params IndexColumn[] indexes)
+        {
+            var t = new TableUniqueConstraint(constraintName, cluster, Sequence<IndexColumn>.Convert(indexes), constraint);
+            tableDefinitions.Add(t);
+            return this;
+        }
+
+        /// <summary>
+        /// Primaries the key.
+        /// </summary>
+        /// <param name="constraintName">Name of the constraint.</param>
+        /// <param name="cluster">The cluster.</param>
+        /// <param name="constraint">The constraint.</param>
+        /// <param name="indexes">The indexes.</param>
+        /// <returns></returns>
+        public AlterTableAddWriter PrimaryKey(string constraintName, Clustered cluster, ConstraintIndex constraint, params IndexColumn[] indexes)
+        {
+            var t = new TablePrimaryKeyConstraint(constraintName, cluster, Sequence<IndexColumn>.Convert(indexes), constraint);
+            tableDefinitions.Add(t);
+            return this;
+        }
+
+        /// <summary>
+        /// Checks the specified name.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <param name="replication">if set to <c>true</c> [replication].</param>
+        /// <param name="predicate">The predicate.</param>
+        /// <returns></returns>
+        public AlterTableAddWriter Check(string name, bool replication, SqlPredicate predicate)
+        {
+            ReplicationToken rep = replication
+                ? (ReplicationToken)ReplicationToken.ForReplicationToken()
+                : (ReplicationToken)ReplicationToken.NotForReplicationToken();
+
+            var t = new TableCheckConstraint(name, rep, predicate);
+            tableDefinitions.Add(t);
+            return this;
+        }
+
+        /// <summary>
+        /// Foreigns the key.
+        /// </summary>
+        /// <param name="columnSource">The column source.</param>
+        /// <param name="refTableName">Name of the reference table.</param>
+        /// <param name="refColumnTarget">The reference column target.</param>
+        /// <param name="keyActions">The key actions.</param>
+        /// <returns></returns>
+        public AlterTableAddWriter ForeignKey(IEnumerable<ColumnName> columnSource, Qualified<SchemaName, TableName> refTableName, IEnumerable<ColumnName> refColumnTarget, params ForeignKeyAction[] keyActions)
+        {
+
+            Sequence<ColumnName> columnNames = Sequence<ColumnName>.Convert(columnSource);
+            Sequence<ColumnName> refColumnNames = Sequence<ColumnName>.Convert(refColumnTarget);
+
+            var t = new TableForeignKeyConstraint(columnNames, refTableName, new Optional<Sequence<ColumnName>>(refColumnNames), Sequence<ForeignKeyAction>.Convert(keyActions));
+            tableDefinitions.Add(t);
+            return this;
+        }
+
+        /// <summary>
+        /// Foreigns the key.
+        /// </summary>
+        /// <param name="constraintName">Name of the constraint.</param>
+        /// <param name="columnSource">The column source.</param>
+        /// <param name="refTableName">Name of the reference table.</param>
+        /// <param name="refColumnTarget">The reference column target.</param>
+        /// <param name="keyActions">The key actions.</param>
+        /// <returns></returns>
+        public AlterTableAddWriter ForeignKey(string constraintName, IEnumerable<ColumnName> columnSource, Qualified<SchemaName, TableName> refTableName, IEnumerable<ColumnName> refColumnTarget, params ForeignKeyAction[] keyActions)
+        {
+
+            Sequence<ColumnName> columnNames = Sequence<ColumnName>.Convert(columnSource);
+            Sequence<ColumnName> refColumnNames = Sequence<ColumnName>.Convert(refColumnTarget);
+            var actions = keyActions.Length == 0
+                ? new Sequence<ForeignKeyAction>()
+                : Sequence<ForeignKeyAction>.Convert(keyActions);
+
+            var t = new TableForeignKeyConstraint(constraintName, columnNames, refTableName, new Optional<Sequence<ColumnName>>(refColumnNames), actions);
+            tableDefinitions.Add(t);
+            return this;
+        }
+
+        /// <summary>
+        /// Foreigns the key.
+        /// </summary>
+        /// <param name="columnSource">The column source.</param>
+        /// <param name="refTableName">Name of the reference table.</param>
+        /// <param name="refColumnTarget">The reference column target.</param>
+        /// <param name="keyActions">The key actions.</param>
+        /// <returns></returns>
+        public AlterTableAddWriter ForeignKey(ColumnName columnSource, Qualified<SchemaName, TableName> refTableName, ColumnName refColumnTarget, params ForeignKeyAction[] keyActions)
+        {
+
+            Sequence<ColumnName> columnNames = new Sequence<ColumnName>(columnSource);
+            Sequence<ColumnName> refColumnNames = new Sequence<ColumnName>(refColumnTarget);
+
+            var t = new TableForeignKeyConstraint(columnNames, refTableName, new Optional<Sequence<ColumnName>>(refColumnNames), Sequence<ForeignKeyAction>.Convert(keyActions));
+            tableDefinitions.Add(t);
+            return this;
+        }
+
+        /// <summary>
+        /// Foreigns the key.
+        /// </summary>
+        /// <param name="constraintName">Name of the constraint.</param>
+        /// <param name="columnSource">The column source.</param>
+        /// <param name="refTableName">Name of the reference table.</param>
+        /// <param name="refColumnTarget">The reference column target.</param>
+        /// <param name="keyActions">The key actions.</param>
+        /// <returns></returns>
+        public AlterTableAddWriter ForeignKey(string constraintName, ColumnName columnSource, Qualified<SchemaName, TableName> refTableName, ColumnName refColumnTarget, params ForeignKeyAction[] keyActions)
+        {
+
+            Sequence<ColumnName> columnNames = new Sequence<ColumnName>(columnSource);
+            Sequence<ColumnName> refColumnNames = new Sequence<ColumnName>(refColumnTarget);
+            var actions = keyActions.Length == 0
+               ? new Sequence<ForeignKeyAction>()
+               : Sequence<ForeignKeyAction>.Convert(keyActions);
+
+            var t = new TableForeignKeyConstraint(constraintName, columnNames, refTableName, new Optional<Sequence<ColumnName>>(refColumnNames), actions);
+            tableDefinitions.Add(t);
+            return this;
+        }
+
+
+        private Dictionary<string, ColumnWriter> _columns = new Dictionary<string, ColumnWriter>();
+        private List<TableDefinition> tableDefinitions = new List<TableDefinition>();
+
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableAddWriter.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableAlterColumnWriter.cs
+    public class AlterTableAlterColumnWriter : TableWriter<AlterTableColumnDefinitionStatement>
+    {
+
+        private ColumnWriter column;
+        private readonly string columnName;        
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AlterTableAlterColumnWriter"/> class.
+        /// </summary>
+        /// <param name="schemaName">Name of the schema.</param>
+        /// <param name="tableName">Name of the table.</param>
+        /// <param name="columnName">Name of the column.</param>
+        public AlterTableAlterColumnWriter(string schemaName, string tableName, string columnName) : base(schemaName, tableName)
+        {
+            this.columnName = columnName;
+        }
+
+        public TypedColumnWriter Column(Qualified<SchemaName, TypeName> type, bool nullable)
+        {
+            var col = new TypedColumnWriter(columnName, type, nullable);
+            column = col;
+            return col;
+        }
+
+        public ComputedColumnWriter AlterComputedColumn(string columnName, Qualified<SchemaName, TypeName> type, bool nullable)
+        {
+            ColumnWriter col = new TypedColumnWriter(columnName, type, nullable);
+            column = col;
+            return col as ComputedColumnWriter;
+        }
+
+        protected override AlterTableColumnDefinitionStatement Create()
+        {
+            return new AlterTableColumnDefinitionStatement(GetName(), new ColumnName(this.columnName), this.column.GetColumnDefinition());
+        }
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableAlterColumnWriter.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableCheckConstraintWriter.cs
+    public class AlterTableCheckConstraintWriter : TableWriter<AlterTableCheckConstraintStatement>
+    {
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AlterTableCheckConstraintWriter"/> class.
+        /// </summary>
+        /// <param name="schemaName">Name of the schema.</param>
+        /// <param name="tableName">Name of the table.</param>
+        /// <param name="withCheck">if set to <c>true</c> [with check].</param>
+        /// <param name="constraintName">Name of the constraint.</param>
+        public AlterTableCheckConstraintWriter(string schemaName, string tableName, bool withCheck, string constraintName = null) : base(schemaName, tableName)
+        {
+            this.WithCheck = withCheck;
+            this.ConstraintName = constraintName;
+        }
+
+        public string ConstraintName { get; private set; }
+
+        public bool WithCheck { get; private set; }
+
+        protected override AlterTableCheckConstraintStatement Create()
+        {
+
+            TableCheckToken t = this.WithCheck
+                ? TableCheckToken.GetTableCheckToken()
+                : TableCheckToken.GetTableWithNocheckToken();
+
+            if (!string.IsNullOrEmpty(this.ConstraintName))
+                return new AlterTableCheckConstraintStatement(GetName(), t, this.ConstraintName);
+
+            return new AlterTableCheckConstraintStatement(GetName(), t);
+
+        }
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableCheckConstraintWriter.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableColumnNotForReplicationWriter.cs
+    public class AlterTableColumnNotForReplicationWriter : TableWriter<AlterTableColumnNotForReplicationStatement>
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AlterTableColumnNotForReplicationWriter"/> class.
+        /// </summary>
+        /// <param name="schemaName">Name of the schema.</param>
+        /// <param name="tableName">Name of the table.</param>
+        /// <param name="columnName">Name of the column.</param>
+        /// <param name="ddlOperationToken">The DDL operation token.</param>
+        public AlterTableColumnNotForReplicationWriter(string schemaName, string tableName, string columnName, DdlOperationToken ddlOperationToken) : base(schemaName, tableName)
+        {
+            this.ColumnName = columnName;
+            this.DdlOperationToken = ddlOperationToken;
+        }
+
+        protected override AlterTableColumnNotForReplicationStatement Create()
+        {
+            return new AlterTableColumnNotForReplicationStatement(GetName(), new ColumnName(this.ColumnName), this.DdlOperationToken);
+        }
+
+        public string ColumnName { get; private set; }
+        public DdlOperationToken DdlOperationToken { get; private set; }
+
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableColumnNotForReplicationWriter.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableColumnPersistedWriter.cs
+    public class AlterTableColumnPersistedWriter : TableWriter<AlterTableColumnPersistedStatement>
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AlterTableColumnPersistedWriter"/> class.
+        /// </summary>
+        /// <param name="schemaName">Name of the schema.</param>
+        /// <param name="tableName">Name of the table.</param>
+        /// <param name="columnName">Name of the column.</param>
+        /// <param name="ddlOperationToken">The DDL operation token.</param>
+        public AlterTableColumnPersistedWriter(string schemaName, string tableName, string columnName, DdlOperationToken ddlOperationToken) : base(schemaName, tableName)
+        {
+            this.ColumnName = columnName;
+            this.DdlOperationToken = ddlOperationToken;
+        }
+
+        public string ColumnName { get; private set; }
+        public DdlOperationToken DdlOperationToken { get; private set; }
+
+        protected override AlterTableColumnPersistedStatement Create()
+        {
+            return new AlterTableColumnPersistedStatement(GetName(), new ColumnName(ColumnName), this.DdlOperationToken);
+        }
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableColumnPersistedWriter.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableColumnRowguidcolWriter.cs
+    public class AlterTableColumnRowguidcolWriter : TableWriter<AlterTableColumnRowguidcolStatement>
+    {
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AlterTableColumnRowguidcolWriter"/> class.
+        /// </summary>
+        /// <param name="schemaName">Name of the schema.</param>
+        /// <param name="tableName">Name of the table.</param>
+        /// <param name="columnName">Name of the column.</param>
+        /// <param name="token">The token.</param>
+        public AlterTableColumnRowguidcolWriter(string schemaName, string tableName, string columnName, DdlOperationToken token) : base(schemaName, tableName)
+        {
+            this.ColumnName = columnName;
+            this.Token = token;
+        }
+
+        public Identifier ColumnName { get; private set; }
+        public DdlOperationToken Token { get; private set; }
+
+        protected override AlterTableColumnRowguidcolStatement Create()
+        {
+            return new AlterTableColumnRowguidcolStatement(GetName(), new ColumnName(this.ColumnName), this.Token);
+        }
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableColumnRowguidcolWriter.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableDropColumnWriter.cs
+    public class AlterTableDropColumnWriter : TableWriter<AlterTableDropColumnStatement>
+    {
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AlterTableDropColumnWriter"/> class.
+        /// </summary>
+        /// <param name="schemaName">Name of the schema.</param>
+        /// <param name="tableName">Name of the table.</param>
+        /// <param name="columnName">Name of the column.</param>
+        public AlterTableDropColumnWriter(string schemaName, string tableName, string columnName) : base(schemaName, tableName)
+        {
+            this.ColumnName = columnName;
+        }
+
+        public string ColumnName { get; private set; }
+
+        protected override AlterTableDropColumnStatement Create()
+        {
+            return new AlterTableDropColumnStatement(GetName(), new ColumnName(ColumnName));
+        }
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableDropColumnWriter.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableDropConstraintWriter.cs
+    public class AlterTableDropConstraintWriter : TableWriter<AlterTableDropConstraintStatement>
+    {
+
+        private readonly string ConstraintName;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AlterTableDropConstraintWriter"/> class.
+        /// </summary>
+        /// <param name="schemaName">Name of the schema.</param>
+        /// <param name="tableName">Name of the table.</param>
+        /// <param name="constraintName">Name of the constraint.</param>
+        public AlterTableDropConstraintWriter(string schemaName, string tableName, string constraintName)
+            : base(schemaName, tableName)
+        {
+            this.ConstraintName = constraintName;
+        }
+
+        protected override AlterTableDropConstraintStatement Create()
+        {
+            return new AlterTableDropConstraintStatement(GetName(), new ConstraintName(Identifier.Identifier(ConstraintName)));
+        }
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableDropConstraintWriter.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableNocheckConstraintWriter.cs
+    public class AlterTableNocheckConstraintWriter : TableWriter<AlterTableNocheckConstraintStatement>
+    {
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AlterTableNocheckConstraintWriter"/> class.
+        /// </summary>
+        /// <param name="schemaName">Name of the schema.</param>
+        /// <param name="tableName">Name of the table.</param>
+        /// <param name="withCheck">if set to <c>true</c> [with check].</param>
+        /// <param name="constraintName">Name of the constraint.</param>
+        public AlterTableNocheckConstraintWriter(string schemaName, string tableName, bool withCheck, string constraintName = null)
+            : base(schemaName, tableName)
+        {
+            this.WithCheck = withCheck;
+            this.ConstraintName = constraintName;
+        }
+
+        public bool WithCheck { get; private set; }
+
+        public string ConstraintName { get; private set; }
+
+        protected override AlterTableNocheckConstraintStatement Create()
+        {
+            TableCheckToken t = this.WithCheck
+                ? TableCheckToken.GetTableCheckToken()
+                : TableCheckToken.GetTableWithNocheckToken();
+
+            if (!string.IsNullOrEmpty(this.ConstraintName))
+                return new AlterTableNocheckConstraintStatement(GetName(), t, this.ConstraintName);
+
+            return new AlterTableNocheckConstraintStatement(GetName(), t);
+
+        }
+
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\AlterTableNocheckConstraintWriter.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\TypedColumnWriter.cs
+    public abstract class ColumnWriter
+    {
+
+        public ColumnWriter(string columnName)
+        {
+            this.ColumnName = columnName;
+        }
+
+        protected Sequence<ColumnConstraint> GetConstraints()
+        {
+            var c = Sequence<ColumnConstraint>.Convert(this.constraints);
+            return c;
+        }
+
+        #region Constraints
+
+        public ColumnWriter IsRowGuidColumn()
+        {
+            this.constraints.Add(new ColumnRowguidcolConstraint());
+            return this;
+        }
+
+        public ColumnWriter ColumnPersisted()
+        {
+            this.constraints.Add(new ColumnPersistedConstraint());
+            return this;
+        }
+
+        protected ColumnWriter ColumnNullable()
+        {
+            this.constraints.Add(new ColumnNullableConstraint());
+            return this;
+        }
+
+        protected ColumnWriter ColumnNotNullable()
+        {
+            this.constraints.Add(new ColumnNotNullableConstraint());
+            return this;
+        }
+
+        public ColumnWriter Identity(long seed = 1, long increment = 1)
+        {
+            this.constraints.Add(new ColumnIdentityConstraint(seed, increment));
+            return this;
+        }
+
+        public ColumnWriter Collation(CollationName collation)
+        {
+            this.constraints.Add(new ColumnCollateConstraint(collation));
+            return this;
+        }
+
+        public ColumnWriter DefaultValue(SqlExpression expression)
+        {
+
+            this.constraints.Add(new ColumnDefaultConstraint(expression));
+            return this;
+        }
+
+        public ColumnWriter Check(bool replication, SqlPredicate predicate)
+        {
+            ReplicationToken rep = replication
+                ? (ReplicationToken)ReplicationToken.ForReplicationToken()
+                : (ReplicationToken)ReplicationToken.NotForReplicationToken();
+            this.constraints.Add(new ColumnCheckConstraint(rep, predicate));
+            return this;
+        }
+
+        public ColumnWriter PrimaryKey(string constraintName, Clustered cluster, ConstraintIndex contraintIndex)
+        {
+            this.constraints.Add(new ColumnPrimaryKeyConstraint(new ConstraintName(Identifier.Identifier(constraintName)), new ConstraintClusterToken(), contraintIndex));
+            return this;
+        }
+
+        public ColumnWriter Unique(Clustered cluster, ConstraintIndex constraintIndex)
+        {
+            ColumnUniqueConstraint result = new ColumnUniqueConstraint(cluster, constraintIndex);
+            constraints.Add(result);
+            return this;
+        }
+
+        public ColumnWriter Unique(string constraintName, Clustered cluster, ConstraintIndex constraintIndex)
+        {
+            ConstraintName _constraintName = new ConstraintName(constraintName);
+            ColumnUniqueConstraint result = new ColumnUniqueConstraint(constraintName, cluster, constraintIndex);
+            constraints.Add(result);
+            return this;
+        }
+
+        public ColumnWriter ForeignKey(CreateTableWriter table, Optional<ColumnName> refColumnName, params ForeignKeyAction[] foreignKeyAction)
+        {
+            Qualified<SchemaName, TableName> tableName = new Qualified<SchemaName, TableName>(table.Schema, table.TableName);
+            ColumnForeignKeyConstraint result = new ColumnForeignKeyConstraint(tableName, refColumnName, Sequence<ForeignKeyAction>.Convert(foreignKeyAction));
+            constraints.Add(result);
+            return this;
+        }
+
+        public ColumnWriter ForeignKey(string constraintName, CreateTableWriter table, Optional<ColumnName> refColumnName, params ForeignKeyAction[] keyActions)
+        {
+            ConstraintName _constraintName = new ConstraintName(constraintName);
+            Qualified<SchemaName, TableName> tableName = new Qualified<SchemaName, TableName>(table.Schema, table.TableName);
+            ColumnForeignKeyConstraint result = new ColumnForeignKeyConstraint(_constraintName, tableName, refColumnName, Sequence<ForeignKeyAction>.Convert(keyActions));
+            constraints.Add(result);
+            return this;
+        }
+
+        #endregion
+
+        private List<ColumnConstraint> constraints = new List<ColumnConstraint>();
+
+        internal abstract TableDefinition Create();
+
+        internal abstract ColumnDefinition GetColumnDefinition();
+
+        public readonly string ColumnName;
+
+    }
+    public class ComputedColumnWriter : ColumnWriter
+    {
+
+        public readonly SqlExpression Expression;
+
+        public ComputedColumnWriter(string columnName, Qualified<SchemaName, TypeName> type, bool nullable)
+            : base(columnName)
+        {
+
+        }
+
+        internal override TableDefinition Create()
+        {
+            ColumnDefinition columnDefinition = GetColumnDefinition();
+            var t = new TableColumnDefinition(ColumnName, columnDefinition);
+            return t;
+        }
+
+        internal override ColumnDefinition GetColumnDefinition()
+        {
+            return new ComputedColumnDefinition(this.Expression, GetConstraints());
+        }
+    }
+    public class TypedColumnWriter : ColumnWriter
+    {
+
+        public TypedColumnWriter(string columnName, Qualified<SchemaName, TypeName> type, bool nullable)
+            : base(columnName)
+        {
+            this.type = type;
+            this.nullable = nullable;
+        }
+
+        internal override TableDefinition Create()
+        {
+            ColumnDefinition columnDefinition = GetColumnDefinition();
+            var t = new TableColumnDefinition(ColumnName, columnDefinition);
+            return t;
+        }
+
+
+        internal override ColumnDefinition GetColumnDefinition()
+        {
+            if (nullable)
+                ColumnNullable();
+            else
+                ColumnNotNullable();
+
+            TypedColumnDefinition columnDefinition = new TypedColumnDefinition(type, GetConstraints());
+
+            return columnDefinition;
+
+        }
+
+        private Qualified<SchemaName, TypeName> type;
+        private bool nullable;
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\TypedColumnWriter.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\CreateTableWriter.cs
+    public class CreateTableWriter : TableWriter<CreateTableStatement>
+    {
+
+        private Dictionary<string, ColumnWriter> _columns = new Dictionary<string, ColumnWriter>();
+        private List<TableDefinition> tableDefinitions = new List<TableDefinition>();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CreateTableWriter"/> class.
+        /// </summary>
+        /// <param name="schemaName">Name of the schema.</param>
+        /// <param name="tableName">Name of the table.</param>
+        public CreateTableWriter(string schemaName, string tableName)
+            : base(schemaName, tableName)
+        {
+
+        }
+
+        /// <summary>
+        /// Creates the column.
+        /// </summary>
+        /// <param name="columnName">Name of the column.</param>
+        /// <param name="type">The type.</param>
+        /// <param name="nullable">if set to <c>true</c> [nullable].</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentException"></exception>
+        /// <exception cref="System.NullReferenceException">type</exception>
+        public TypedColumnWriter CreateColumn(string columnName, Qualified<SchemaName, TypeName> type, bool nullable)
+        {
+
+            if (!Ddl._validateName.IsMatch(columnName))
+                throw new ArgumentException(string.Format("invalid column name '{0}'", columnName));
+
+            if (type == null)
+                throw new NullReferenceException("type");
+
+            ColumnWriter col;
+            if (!_columns.TryGetValue(columnName, out col))
+            {
+                col = new TypedColumnWriter(columnName, type, nullable);
+                this._columns.Add(columnName, col);
+            }
+
+            return col as TypedColumnWriter;
+        }
+
+        /// <summary>
+        /// Creates the computed column.
+        /// </summary>
+        /// <param name="columnName">Name of the column.</param>
+        /// <param name="type">The type.</param>
+        /// <param name="nullable">if set to <c>true</c> [nullable].</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentException"></exception>
+        /// <exception cref="System.NullReferenceException">type</exception>
+        public ComputedColumnWriter CreateComputedColumn(string columnName, Qualified<SchemaName, TypeName> type, bool nullable)
+        {
+
+            if (!Ddl._validateName.IsMatch(columnName))
+                throw new ArgumentException(string.Format("invalid column name '{0}'", columnName));
+
+            if (type == null)
+                throw new NullReferenceException("type");
+
+            ColumnWriter col;
+            if (!_columns.TryGetValue(columnName, out col))
+            {
+                col = new TypedColumnWriter(columnName, type, nullable);
+                this._columns.Add(columnName, col);
+            }
+
+            return col as ComputedColumnWriter;
+        }
+
+        /// <summary>
+        /// Uniques the index.
+        /// </summary>
+        /// <param name="constraintName">Name of the constraint.</param>
+        /// <param name="cluster">The cluster.</param>
+        /// <param name="constraint">The constraint.</param>
+        /// <param name="indexes">The indexes.</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentException"></exception>
+        /// <exception cref="System.NullReferenceException">constraint</exception>
+        public CreateTableWriter UniqueIndex(string constraintName, Clustered cluster, ConstraintIndex constraint, params IndexColumn[] indexes)
+        {
+
+            if (!Ddl._validateName.IsMatch(constraintName))
+                throw new ArgumentException(string.Format("invalid constraint name '{0}'", constraintName));
+
+            if (constraint == null)
+                throw new NullReferenceException("constraint");
+
+
+            var t = new TableUniqueConstraint(constraintName, cluster, Sequence<IndexColumn>.Convert(indexes), constraint);
+            tableDefinitions.Add(t);
+            return this;
+        }
+
+        /// <summary>
+        /// Primaries the key.
+        /// </summary>
+        /// <param name="constraintName">Name of the constraint.</param>
+        /// <param name="cluster">The cluster.</param>
+        /// <param name="constraint">The constraint.</param>
+        /// <param name="indexes">The indexes.</param>
+        /// <returns></returns>
+        /// <exception cref="System.NullReferenceException">constraint</exception>
+        /// <exception cref="System.ArgumentException"></exception>
+        public CreateTableWriter PrimaryKey(string constraintName, Clustered cluster, ConstraintIndex constraint, params IndexColumn[] indexes)
+        {
+
+            if (constraint == null)
+                throw new NullReferenceException("constraint");
+
+            if (!Ddl._validateName.IsMatch(constraintName))
+                throw new ArgumentException(string.Format("invalid constraint name '{0}'", constraintName));
+
+            var t = new TablePrimaryKeyConstraint(constraintName, cluster, Sequence<IndexColumn>.Convert(indexes), constraint);
+            tableDefinitions.Add(t);
+            return this;
+        }
+
+        /// <summary>
+        /// Checks the specified constraint name.
+        /// </summary>
+        /// <param name="constraintName">Name of the constraint.</param>
+        /// <param name="replication">if set to <c>true</c> [replication].</param>
+        /// <param name="predicate">The predicate.</param>
+        /// <returns></returns>
+        /// <exception cref="System.NullReferenceException">predicate</exception>
+        /// <exception cref="System.ArgumentException"></exception>
+        public CreateTableWriter Check(string constraintName, bool replication, SqlPredicate predicate)
+        {
+
+            if (predicate == null)
+                throw new NullReferenceException("predicate");
+
+            if (!Ddl._validateName.IsMatch(constraintName))
+                throw new ArgumentException(string.Format("invalid constraint name '{0}'", constraintName));
+
+            ReplicationToken rep = replication
+                ? (ReplicationToken)ReplicationToken.ForReplicationToken()
+                : (ReplicationToken)ReplicationToken.NotForReplicationToken();
+
+            var t = new TableCheckConstraint(constraintName, rep, predicate);
+            tableDefinitions.Add(t);
+            return this;
+        }
+
+        /// <summary>
+        /// Foreigns the key.
+        /// </summary>
+        /// <param name="columnSource">The column source.</param>
+        /// <param name="refTableName">Name of the reference table.</param>
+        /// <param name="refColumnTarget">The reference column target.</param>
+        /// <param name="keyActions">The key actions.</param>
+        /// <returns></returns>
+        /// <exception cref="System.NullReferenceException">
+        /// columnSource
+        /// or
+        /// refTableName
+        /// or
+        /// refColumnTarget
+        /// </exception>
+        public CreateTableWriter ForeignKey(IEnumerable<ColumnName> columnSource, Qualified<SchemaName, TableName> refTableName, IEnumerable<ColumnName> refColumnTarget, params ForeignKeyAction[] keyActions)
+        {
+
+            if (columnSource == null)
+                throw new NullReferenceException("columnSource");
+
+            if (refTableName == null)
+                throw new NullReferenceException("refTableName");
+
+            if (refColumnTarget == null)
+                throw new NullReferenceException("refColumnTarget");
+
+            Sequence<ColumnName> columnNames = Sequence<ColumnName>.Convert(columnSource);
+            Sequence<ColumnName> refColumnNames = Sequence<ColumnName>.Convert(refColumnTarget);
+
+            var t = new TableForeignKeyConstraint(columnNames, refTableName, new Optional<Sequence<ColumnName>>(refColumnNames), Sequence<ForeignKeyAction>.Convert(keyActions));
+            tableDefinitions.Add(t);
+            return this;
+        }
+
+        /// <summary>
+        /// Foreigns the key.
+        /// </summary>
+        /// <param name="constraintName">Name of the constraint.</param>
+        /// <param name="columnSource">The column source.</param>
+        /// <param name="refTableName">Name of the reference table.</param>
+        /// <param name="refColumnTarget">The reference column target.</param>
+        /// <param name="keyActions">The key actions.</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentException"></exception>
+        /// <exception cref="System.NullReferenceException">
+        /// columnSource
+        /// or
+        /// refTableName
+        /// or
+        /// refColumnTarget
+        /// </exception>
+        public CreateTableWriter ForeignKey(string constraintName, IEnumerable<ColumnName> columnSource, Qualified<SchemaName, TableName> refTableName, IEnumerable<ColumnName> refColumnTarget, params ForeignKeyAction[] keyActions)
+        {
+
+            if (!Ddl._validateName.IsMatch(constraintName))
+                throw new ArgumentException(string.Format("invalid constraint name '{0}'", constraintName));
+
+            if (columnSource == null)
+                throw new NullReferenceException("columnSource");
+
+            if (refTableName == null)
+                throw new NullReferenceException("refTableName");
+
+            if (refColumnTarget == null)
+                throw new NullReferenceException("refColumnTarget");
+
+            Sequence<ColumnName> columnNames = Sequence<ColumnName>.Convert(columnSource);
+            Sequence<ColumnName> refColumnNames = Sequence<ColumnName>.Convert(refColumnTarget);
+            var actions = keyActions.Length == 0
+               ? new Sequence<ForeignKeyAction>()
+               : Sequence<ForeignKeyAction>.Convert(keyActions);
+
+            var t = new TableForeignKeyConstraint(constraintName, columnNames, refTableName, new Optional<Sequence<ColumnName>>(refColumnNames), actions);
+            tableDefinitions.Add(t);
+            return this;
+        }
+
+        /// <summary>
+        /// Foreigns the key.
+        /// </summary>
+        /// <param name="columnSource">The column source.</param>
+        /// <param name="refTableName">Name of the reference table.</param>
+        /// <param name="refColumnTarget">The reference column target.</param>
+        /// <param name="keyActions">The key actions.</param>
+        /// <returns></returns>
+        /// <exception cref="System.NullReferenceException">
+        /// columnSource
+        /// or
+        /// refTableName
+        /// or
+        /// refColumnTarget
+        /// </exception>
+        public CreateTableWriter ForeignKey(ColumnName columnSource, Qualified<SchemaName, TableName> refTableName, ColumnName refColumnTarget, params ForeignKeyAction[] keyActions)
+        {
+
+            if (columnSource == null)
+                throw new NullReferenceException("columnSource");
+
+            if (refTableName == null)
+                throw new NullReferenceException("refTableName");
+
+            if (refColumnTarget == null)
+                throw new NullReferenceException("refColumnTarget");
+
+            Sequence<ColumnName> columnNames = new Sequence<ColumnName>(columnSource);
+            Sequence<ColumnName> refColumnNames = new Sequence<ColumnName>(refColumnTarget);
+
+            var t = new TableForeignKeyConstraint(columnNames, refTableName, new Optional<Sequence<ColumnName>>(refColumnNames), Sequence<ForeignKeyAction>.Convert(keyActions));
+            tableDefinitions.Add(t);
+            return this;
+        }
+
+        /// <summary>
+        /// Foreigns the key.
+        /// </summary>
+        /// <param name="constraintName">Name of the constraint.</param>
+        /// <param name="columnSource">The column source.</param>
+        /// <param name="refTableName">Name of the reference table.</param>
+        /// <param name="refColumnTarget">The reference column target.</param>
+        /// <param name="keyActions">The key actions.</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentException"></exception>
+        /// <exception cref="System.NullReferenceException">
+        /// columnSource
+        /// or
+        /// refTableName
+        /// or
+        /// refColumnTarget
+        /// </exception>
+        public CreateTableWriter ForeignKey(string constraintName, ColumnName columnSource, Qualified<SchemaName, TableName> refTableName, ColumnName refColumnTarget, params ForeignKeyAction[] keyActions)
+        {
+
+            if (!Ddl._validateName.IsMatch(constraintName))
+                throw new ArgumentException(string.Format("invalid constraint name '{0}'", constraintName));
+
+            if (columnSource == null)
+                throw new NullReferenceException("columnSource");
+
+            if (refTableName == null)
+                throw new NullReferenceException("refTableName");
+
+            if (refColumnTarget == null)
+                throw new NullReferenceException("refColumnTarget");
+
+            Sequence<ColumnName> columnNames = new Sequence<ColumnName>(columnSource);
+            Sequence<ColumnName> refColumnNames = new Sequence<ColumnName>(refColumnTarget);
+            var actions = keyActions.Length == 0
+               ? new Sequence<ForeignKeyAction>()
+               : Sequence<ForeignKeyAction>.Convert(keyActions);
+
+            var t = new TableForeignKeyConstraint(constraintName, columnNames, refTableName, new Optional<Sequence<ColumnName>>(refColumnNames), actions);
+            tableDefinitions.Add(t);
+            return this;
+        }
+
+        protected override CreateTableStatement Create()
+        {
+
+            List<TableDefinition> defs = new List<TableDefinition>();
+
+            foreach (var item in this._columns)
+                defs.Add(item.Value.Create());
+
+            foreach (var item in this.tableDefinitions)
+                defs.Add(item);
+
+            return new CreateTableStatement(GetName(), Sequence<TableDefinition>.Convert(defs));
+        }
+
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\CreateTableWriter.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Ddl.cs
+    public static class Ddl
+    {
+
+        internal static Regex _validateName = new Regex(@"^[\p{L}_][\p{L}\p{N}@$#_]{0,127}$");
+
+        public static Qualified<SchemaName, TableName> TableName(string schema, string table)
+        {
+            return new Qualified<SchemaName, TableName>(schema, table);
+        }
+
+        public static Qualified<SchemaName, TableName> TableName(string table)
+        {
+            return new Qualified<SchemaName, TableName>(table);
+        }
+
+        public static IndexName IndexName(string indexName)
+        {
+            return new IndexName(indexName);
+        }
+
+        public static class Create
+        {
+
+            /// <summary>
+            /// create a new table on the Table.
+            /// </summary>
+            /// <param name="schemaName">Name of the schema.</param>
+            /// <param name="tableName">Name of the table.</param>
+            /// <returns></returns>
+            public static CreateTableWriter Table(string schemaName, string tableName)
+            {
+                return new CreateTableWriter(schemaName, tableName);
+            }
+
+
+            /// <summary>
+            /// create an index Index.
+            /// </summary>
+            /// <param name="isUnique">if set to <c>true</c> [is unique].</param>
+            /// <param name="clustered">The clustered.</param>
+            /// <param name="indexName">Name of the index.</param>
+            /// <param name="onTable">The on table.</param>
+            /// <param name="indexes">The indexes.</param>
+            /// <param name="options">The options.</param>
+            /// <returns></returns>
+            /// <exception cref="System.ArgumentException"></exception>
+            /// <exception cref="System.NullReferenceException">constraint</exception>
+            public static CreateColumnIndexStatement Index(bool isUnique, Clustered clustered, string indexName, Qualified<SchemaName, TableName> onTable, IndexColumn[] indexes, params IndexOption[] options)
+            {
+
+                if (!Ddl._validateName.IsMatch(indexName))
+                    throw new ArgumentException(string.Format("invalid index name '{0}'", indexName));
+
+                Optional<UniqueToken> optionalIsUnique = isUnique
+                    ? new Optional<UniqueToken>(new UniqueToken())
+                    : new Optional<UniqueToken>();
+
+                Optional<Sequence<IndexOption>> o2 = new Optional<Sequence<IndexOption>>();
+                if (options.Length > 0)
+                    o2 = new Optional<Sequence<IndexOption>>(Sequence<IndexOption>.Convert(options));
+
+                var index = new CreateColumnIndexStatement(optionalIsUnique, clustered, Ddl.IndexName(indexName), onTable, Sequence<IndexColumn>.Convert(indexes), o2);
+
+                return index;
+
+            }
+
+            public static CreateFulltextIndexStatement IndexFulltext(string indexName, Qualified<SchemaName, TableName> tableName, FullTextChangeTrackingEnum changeTracking, params FulltextColumn[] columns)
+            {
+
+                IndexName _indexName = indexName;
+
+                Optional<Sequence<FulltextColumn>> _columns = columns.Length == 0
+                    ? new Optional<Sequence<FulltextColumn>>()
+                    : new Optional<Sequence<FulltextColumn>>(Sequence<FulltextColumn>.Convert(columns));
+
+                FulltextChangeTracking tracking = FulltextChangeTracking.Get(changeTracking);
+
+                return new CreateFulltextIndexStatement(tableName, _columns, _indexName, tracking);
+
+            }
+
+            /// <summary>
+            /// Gets  create XML index structure.
+            /// </summary>
+            /// <param name="indexName">Name of the index.</param>
+            /// <param name="tableName">Name of the table.</param>
+            /// <param name="columnName">Name of the column.</param>
+            /// <param name="indexUsing">The index using.</param>
+            /// <param name="indexOptions">The index options.</param>
+            /// <returns></returns>
+            public static CreateXmlIndexStatement IndexXml(string indexName, Qualified<SchemaName, TableName> tableName, string columnName, IndexUsing indexUsing, params IndexOption[] indexOptions)
+            {
+
+                IndexName _indexName = indexName;
+                ColumnName _columnName = columnName;
+
+                Optional<Sequence<IndexOption>> _indexOptions = indexOptions.Length == 0
+                    ? new Optional<Sequence<IndexOption>>()
+                    : new Optional<Sequence<IndexOption>>(Sequence<IndexOption>.Convert(indexOptions));
+
+                return new CreateXmlIndexStatement(_indexName, tableName, _columnName, indexUsing, _indexOptions);
+            }
+
+            /// <summary>
+            /// return a structure CreatePrimaryXmlIndexStatement
+            /// </summary>
+            /// <param name="indexName">Name of the index.</param>
+            /// <param name="tableName">Name of the table.</param>
+            /// <param name="columnName">Name of the column.</param>
+            /// <param name="indexUsing">The index using.</param>
+            /// <param name="indexOptions">The index options.</param>
+            /// <returns></returns>
+            public static CreatePrimaryXmlIndexStatement GetCreatePrimaryXml(IndexName indexName, Qualified<SchemaName, TableName> tableName, string columnName, IndexUsing indexUsing, params IndexOption[] indexOptions)
+            {
+
+                IndexName _indexName = indexName;
+                ColumnName _columnName = columnName;
+
+                Optional<Sequence<IndexOption>> _indexOptions = indexOptions.Length == 0
+                    ? new Optional<Sequence<IndexOption>>()
+                    : new Optional<Sequence<IndexOption>>(Sequence<IndexOption>.Convert(indexOptions));
+
+                return new CreatePrimaryXmlIndexStatement(_indexName, tableName, _columnName, indexUsing, _indexOptions);
+
+            }
+
+        }
+
+        public static class Alter
+        {
+
+            public static class Table
+            {
+
+                /// <summary>
+                /// Alter a column from the specified table.
+                /// </summary>
+                /// <param name="schemaName">Name of the schema.</param>
+                /// <param name="tableName">Name of the table.</param>
+                /// <returns></returns>
+                public static AlterTableAlterColumnWriter AlterColumn(string schemaName, string tableName, string columnName)
+                {
+                    return new AlterTableAlterColumnWriter(schemaName, tableName, columnName);
+                }
+
+                /// <summary>
+                /// Adds a new column in the specified table.
+                /// </summary>
+                /// <param name="schemaName">Name of the schema.</param>
+                /// <param name="tableName">Name of the table.</param>
+                /// <param name="columnName">Name of the column.</param>
+                /// <param name="withCheck">if set to <c>true</c> [with check].</param>
+                /// <returns></returns>
+                public static AlterTableAddColumnConstraintWriter AddColumn(string schemaName, string tableName, string columnName, bool withCheck)
+                {
+                    return new AlterTableAddColumnConstraintWriter(schemaName, tableName, columnName, withCheck);
+                }
+
+                /// <summary>
+                /// Drops the constraint specified by the name.
+                /// </summary>
+                /// <param name="schemaName">Name of the schema.</param>
+                /// <param name="tableName">Name of the table.</param>
+                /// <param name="constraintName">Name of the constraint.</param>
+                /// <returns></returns>
+                public static AlterTableDropConstraintWriter DropConstraint(string schemaName, string tableName, string constraintName)
+                {
+                    return new AlterTableDropConstraintWriter(schemaName, tableName, constraintName);
+                }
+
+                /// <summary>
+                /// Drops the column.
+                /// </summary>
+                /// <param name="schemaName">Name of the schema.</param>
+                /// <param name="tableName">Name of the table.</param>
+                /// <param name="columnName">Name of the column.</param>
+                /// <returns></returns>
+                public static AlterTableDropColumnWriter DropColumn(string schemaName, string tableName, string columnName)
+                {
+                    return new AlterTableDropColumnWriter(schemaName, tableName, columnName);
+                }
+
+                /// <summary>
+                /// Alters the table add.
+                /// </summary>
+                /// <param name="schemaName">Name of the schema.</param>
+                /// <param name="tableName">Name of the table.</param>
+                /// <param name="withCheck">if set to <c>true</c> [with check].</param>
+                /// <returns></returns>
+                public static AlterTableAddWriter AlterTableAdd(string schemaName, string tableName, bool withCheck)
+                {
+                    return new AlterTableAddWriter(schemaName, tableName, withCheck);
+                }
+
+                /// <summary>
+                /// Specify the table have a columns row guid.
+                /// </summary>
+                /// <param name="schemaName">Name of the schema.</param>
+                /// <param name="tableName">Name of the table.</param>
+                /// <param name="columnName">Name of the column.</param>
+                /// <param name="token">The token.</param>
+                /// <returns></returns>
+                public static AlterTableColumnRowguidcolWriter ColumnRowguid(string schemaName, string tableName, string columnName, DdlOperationToken token)
+                {
+                    return new AlterTableColumnRowguidcolWriter(schemaName, tableName, columnName, token);
+                }
+
+                public static AlterTableColumnPersistedWriter ColumnPersisted(string schemaName, string tableName, string columnName, DdlOperationToken ddlOperationToken)
+                {
+                    return new AlterTableColumnPersistedWriter(schemaName, tableName, columnName, ddlOperationToken);
+                }
+
+                /// <summary>
+                /// specify that the table have no check.
+                /// </summary>
+                /// <param name="schemaName">Name of the schema.</param>
+                /// <param name="tableName">Name of the table.</param>
+                /// <param name="withCheck">if set to <c>true</c> [with check].</param>
+                /// <param name="constraintName">Name of the constraint.</param>
+                /// <returns></returns>
+                public static AlterTableNocheckConstraintWriter NoCheck(string schemaName, string tableName, bool withCheck, string constraintName = null)
+                {
+                    return new AlterTableNocheckConstraintWriter(schemaName, tableName, withCheck, constraintName);
+                }
+
+                /// <summary>
+                /// add a check constraint on the specified table
+                /// </summary>
+                /// <param name="schemaName">Name of the schema.</param>
+                /// <param name="tableName">Name of the table.</param>
+                /// <param name="withCheck">if set to <c>true</c> [with check].</param>
+                /// <param name="constraintName">Name of the constraint.</param>
+                /// <returns></returns>
+                public static AlterTableCheckConstraintWriter CheckConstraint(string schemaName, string tableName, bool withCheck, string constraintName = null)
+                {
+                    return new AlterTableCheckConstraintWriter(schemaName, tableName, withCheck, constraintName);
+                }
+
+            }
+        }
+
+        public static class Types
+        {
+
+            public static Qualified<SchemaName, TypeName> GetTypeName(string schemaName, string typeName)
+            {
+                var schema = new SchemaName(schemaName);
+                var q = new Qualified<SchemaName, TypeName>(schema, TypeName.GetTypeName(typeName));
+                return q;
+            }
+
+            public static Qualified<SchemaName, TypeName> GetTypeName(string typeName)
+            {
+                var q = new Qualified<SchemaName, TypeName>(TypeName.GetTypeName(typeName));
+                return q;
+            }
+
+            /// <summary>
+            /// return a declarative type of type bigint.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> BIGINT() { return GetTypeName("BIGINT"); }
+
+            /// <summary>
+            /// return a declarative type of type binary.
+            /// </summary>
+            /// <param name="length">The length.</param>
+            /// <returns></returns>
+            /// <exception cref="System.InvalidOperationException">
+            /// the length value must be great than 0
+            /// and
+            /// the length value must be less or equal than 8000
+            /// </exception>
+            public static Qualified<SchemaName, TypeName> BINARY(int length)
+            {
+                if (length < 1)
+                    throw new InvalidOperationException("the length value must be great than 0");
+                if (length > 8000)
+                    throw new InvalidOperationException("the length value must be less or equal than 8000");
+                return new Qualified<SchemaName, TypeName>(TypeName.GetTypeNameWithPrecision("BINARY", length));
+            }
+
+            /// <summary>
+            /// return a declarative type of type bit.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> BIT() { return GetTypeName("BIT"); }
+
+            /// <summary>
+            /// return a declarative type of type char.
+            /// </summary>
+            /// <param name="length">The length.</param>
+            /// <returns></returns>
+            /// <exception cref="System.InvalidOperationException">the length value must be great than 0
+            /// and
+            /// the length value must be less or equal than 8000</exception>
+            public static Qualified<SchemaName, TypeName> CHAR(int length)
+            {
+                if (length < 1)
+                    throw new InvalidOperationException("the length value must be great than 0");
+                if (length > 8000)
+                    throw new InvalidOperationException("the length value must be less or equal than 8000");
+                return new Qualified<SchemaName, TypeName>(TypeName.GetTypeNameWithPrecision("CHAR", length));
+            }
+
+            /// <summary>
+            /// return a declarative type of type date.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> DATE() { return GetTypeName("DATE"); }
+
+            /// <summary>
+            /// return a declarative type of type datetime.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> DATETIME() { return GetTypeName("DATETIME"); }
+
+            /// <summary>
+            /// return a declarative type of type Datetime2
+            /// </summary>
+            /// <param name="length">The length.</param>
+            /// <returns></returns>
+            /// <exception cref="System.InvalidOperationException">
+            /// the length value must be great than 5
+            /// and
+            /// the length value must be less or equal than 7
+            /// </exception>
+            public static Qualified<SchemaName, TypeName> DATETIME2(int length)
+            {
+                if (length < 5)
+                    throw new InvalidOperationException("the length value must be great than 5");
+                if (length > 7)
+                    throw new InvalidOperationException("the length value must be less or equal than 7");
+                return new Qualified<SchemaName, TypeName>(TypeName.GetTypeNameWithPrecision("DATETIME", length));
+            }
+
+            /// <summary>
+            /// return a declarative type of type Datetime.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> DATETIME2()
+            {
+                return new Qualified<SchemaName, TypeName>(TypeName.GetTypeName("DATETIME"));
+            }
+
+            /// <summary>
+            /// return a declarative type of type datetimeoffset.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> DATETIMEOFFSET() { return GetTypeName("DATETIMEOFFSET"); }
+
+            /// <summary>
+            /// return a declarative type of type datetimeoffset.
+            /// </summary>
+            /// <param name="length">The length.</param>
+            /// <returns></returns>
+            /// <exception cref="System.InvalidOperationException">
+            /// the length value must be great than 5
+            /// or
+            /// the length value must be less or equal than 7
+            /// </exception>
+            public static Qualified<SchemaName, TypeName> DATETIMEOFFSET(int length)
+            {
+                if (length < 5)
+                    throw new InvalidOperationException("the length value must be great than 5");
+                if (length > 7)
+                    throw new InvalidOperationException("the length value must be less or equal than 7");
+                return new Qualified<SchemaName, TypeName>(TypeName.GetTypeNameWithPrecision("DATETIMEOFFSET", length));
+            }
+
+            /// <summary>
+            /// return a declarative type of type decimal.
+            /// </summary>
+            /// <param name="length">The length.</param>
+            /// <param name="precision">The precision.</param>
+            /// <returns></returns>
+            /// <exception cref="System.InvalidOperationException">
+            /// the length value must be great than 5
+            /// and
+            /// the length value must be less or equal than 38
+            /// and
+            /// the precision value must be great than 5
+            /// and
+            /// the precision value must be less or equal than 38
+            /// </exception>
+            public static Qualified<SchemaName, TypeName> DECIMAL(int length, int precision)
+            {
+                if (length < 1)
+                    throw new InvalidOperationException("the length value must be great than 5");
+                if (length > 38)
+                    throw new InvalidOperationException("the length value must be less or equal than 38");
+                if (precision < 0)
+                    throw new InvalidOperationException("the precision value must be great than 5");
+                if (precision > 38)
+                    throw new InvalidOperationException("the precision value must be less or equal than 38");
+
+                return new Qualified<SchemaName, TypeName>(TypeName.GetTypeNameWithPrecision("DECIMAL", length));
+            }
+
+            /// <summary>
+            /// return a declarative type of type float.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> FLOAT() { return GetTypeName("FLOAT"); }
+
+            /// <summary>
+            /// return a declarative type of type geography.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> GEOGRAPHY() { return GetTypeName("GEOGRAPHY"); }
+
+            /// <summary>
+            /// return a declarative type of type geometry.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> GEOMETRY() { return GetTypeName("GEOMETRY"); }
+
+            /// <summary>
+            /// return a declarative type of type hierarchyid.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> HIERARCHYID() { return GetTypeName("HIERARCHYID"); }
+
+            /// <summary>
+            /// return a declarative type of type image.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> IMAGE() { return GetTypeName("IMAGE"); }
+
+            /// <summary>
+            /// return a declarative type of type int.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> INT() { return GetTypeName("INT"); }
+
+            /// <summary>
+            /// return a declarative type of type money.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> MONEY() { return GetTypeName("MONEY"); }
+
+            /// <summary>
+            /// return a declarative type of type nchars.
+            /// </summary>
+            /// <param name="length">The length.</param>
+            /// <returns></returns>
+            /// <exception cref="System.InvalidOperationException">
+            /// the length value must be great than 0
+            /// and
+            /// the length value must be less or equal than 8000
+            /// </exception>
+            public static Qualified<SchemaName, TypeName> NCHAR(int length)
+            {
+                if (length < 1)
+                    throw new InvalidOperationException("the length value must be great than 0");
+                if (length > 8000)
+                    throw new InvalidOperationException("the length value must be less or equal than 8000");
+                return new Qualified<SchemaName, TypeName>(TypeName.GetTypeNameWithPrecision("NCHAR", length));
+            }
+
+            /// <summary>
+            /// return a declarative type of type ntext.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> NTEXT() { return GetTypeName("NTEXT"); }
+
+            /// <summary>
+            /// return a declarative type of type nvarchar.
+            /// </summary>
+            /// <param name="length">The length.</param>
+            /// <returns></returns>
+            /// <exception cref="System.InvalidOperationException">
+            /// the length value must be great than 0
+            /// and
+            /// the length value must be less or equal than 8000
+            /// </exception>
+            public static Qualified<SchemaName, TypeName> NVARCHAR(int length)
+            {
+                if (length < 1)
+                    throw new InvalidOperationException("the length value must be great than 0");
+                if (length > 8000)
+                    throw new InvalidOperationException("the length value must be less or equal than 8000");
+                return new Qualified<SchemaName, TypeName>(TypeName.GetTypeNameWithPrecision("NVARCHAR", length));
+            }
+
+            /// <summary>
+            /// return a declarative type of type numerics.
+            /// </summary>
+            /// <param name="length">The length.</param>
+            /// <param name="precision">The precision.</param>
+            /// <returns></returns>
+            /// <exception cref="System.InvalidOperationException">
+            /// the length value must be great than 5
+            /// and
+            /// the length value must be less or equal than 38
+            /// and
+            /// the precision value must be great than 5
+            /// and
+            /// the precision value must be less or equal than 38
+            /// </exception>
+            public static Qualified<SchemaName, TypeName> NUMERIC(int length, int precision)
+            {
+                if (length < 1)
+                    throw new InvalidOperationException("the length value must be great than 5");
+                if (length > 38)
+                    throw new InvalidOperationException("the length value must be less or equal than 38");
+                if (precision < 0)
+                    throw new InvalidOperationException("the precision value must be great than 5");
+                if (precision > 38)
+                    throw new InvalidOperationException("the precision value must be less or equal than 38");
+
+                return new Qualified<SchemaName, TypeName>(TypeName.GetTypeNameWithPrecision("NUMERIC", length));
+            }
+
+            /// <summary>
+            /// return a declarative type of type real.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> REAL() { return GetTypeName("REAL"); }
+
+            /// <summary>
+            /// return a declarative type of type smalldatetimes.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> SMALLDATETIME() { return GetTypeName("SMALLDATETIME"); }
+
+            /// <summary>
+            /// return a declarative type of type smallint.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> SMALLINT() { return GetTypeName("SMALLINT"); }
+
+            /// <summary>
+            /// return a declarative type of type Smallmoneys.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> SMALLMONEY() { return GetTypeName("SMALLMONEY"); }
+
+            /// <summary>
+            /// return a declarative type of type variant.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> SQL_VARIANT() { return GetTypeName("SQL_VARIANT"); }
+
+            /// <summary>
+            /// return a declarative type of type text
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> TEXT() { return GetTypeName("TEXT"); }
+
+            /// <summary>
+            /// Times the specified length.
+            /// </summary>
+            /// <param name="length">The length.</param>
+            /// <returns></returns>
+            /// <exception cref="System.InvalidOperationException">
+            /// the length value must be great than 5
+            /// and
+            /// the length value must be less or equal than 7
+            /// </exception>
+            public static Qualified<SchemaName, TypeName> TIME(int length)
+            {
+                if (length < 5)
+                    throw new InvalidOperationException("the length value must be great than 5");
+                if (length > 7)
+                    throw new InvalidOperationException("the length value must be less or equal than 7");
+                return new Qualified<SchemaName, TypeName>(TypeName.GetTypeNameWithPrecision("TIME", length));
+            }
+
+            /// <summary>
+            /// return a declarative type of type timestamp.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> TIMESTAMP() { return GetTypeName("TIMESTAMP"); }
+
+            /// <summary>
+            /// return a declarative type of type tiny int (integer 16)
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> TINYINT() { return GetTypeName("TINYINT"); }
+
+            /// <summary>
+            ///return a declarative type of type Uniqueidentifiers.
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> UNIQUEIDENTIFIER() { return GetTypeName("UNIQUEIDENTIFIER"); }
+
+            /// <summary>
+            /// return a declarative type of type varbinary.
+            /// </summary>
+            /// <param name="length">The length.</param>
+            /// <returns></returns>
+            /// <exception cref="System.InvalidOperationException">
+            /// the length value must be great than 0
+            /// and
+            /// the length value must be less or equal than 9000
+            /// </exception>
+            public static Qualified<SchemaName, TypeName> VARBINARY(int length)
+            {
+                if (length < 1)
+                    throw new InvalidOperationException("the length value must be great than 0");
+                if (length > 9000)
+                    throw new InvalidOperationException("the length value must be less or equal than 9000");
+                return new Qualified<SchemaName, TypeName>(TypeName.GetTypeNameWithPrecision("VARBINARY", length));
+            }
+
+            /// <summary>
+            /// return a declarative type of type varchar
+            /// </summary>
+            /// <param name="length">The length.</param>
+            /// <returns></returns>
+            /// <exception cref="System.InvalidOperationException">
+            /// the length value must be great than 0
+            /// and
+            /// the length value must be less or equal than 8000
+            /// </exception>
+            public static Qualified<SchemaName, TypeName> VARCHAR(int length)
+            {
+                if (length < 1)
+                    throw new InvalidOperationException("the length value must be great than 0");
+                if (length > 8000)
+                    throw new InvalidOperationException("the length value must be less or equal than 8000");
+                return new Qualified<SchemaName, TypeName>(TypeName.GetTypeNameWithPrecision("VARCHAR", length));
+            }
+
+            /// <summary>
+            /// return a declarative type of type Xml
+            /// </summary>
+            /// <returns></returns>
+            public static Qualified<SchemaName, TypeName> XML() { return GetTypeName("XML"); }
+
+        }
+
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Ddl.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\TableWriter.cs
+    public abstract class TableWriter<T> : WriterBase<T>
+    {
+
+        public readonly SchemaName Schema;
+        public readonly TableName TableName;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TableWriter{T}"/> class.
+        /// </summary>
+        /// <param name="schemaName">Name of the schema.</param>
+        /// <param name="tableName">Name of the table.</param>
+        /// <exception cref="System.ArgumentException">
+        /// </exception>
+        public TableWriter(string schemaName, string tableName)
+        {
+
+            if (!Ddl._validateName.IsMatch(schemaName))
+                throw new ArgumentException(string.Format("invalid namespace '{0}'", tableName ));
+
+            if (!Ddl._validateName.IsMatch(tableName))
+                throw new ArgumentException(string.Format("invalid table name '{0}'", tableName));
+
+            this.Schema = new SchemaName(schemaName);
+            this.TableName = new TableName(tableName);
+        }
+
+        public Qualified<SchemaName, TableName> GetName()
+        {
+            return new Qualified<SchemaName, TableName>(this.Schema, this.TableName);
+        }
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\Tables\TableWriter.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\WriterBase.cs
+    public abstract class WriterBase<T>
+    {
+
+        public override string ToString()
+        {
+            return Create().ToString();
+        }
+
+        protected abstract T Create();
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\Sql\SqlServer\WriterBase.cs
+
+
+ #>

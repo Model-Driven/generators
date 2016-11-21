@@ -1,0 +1,3306 @@
+<#+
+
+public class StorageRoot : NamedElement
+{
+    public CriticalLevelEnum RequiredNamespace
+    {
+        get; set; 
+    }
+    
+    public string DefaultNamespace
+    {
+        get; set; 
+    }
+    
+    public CriticalLevelEnum DescriptionIsRequired
+    {
+        get; set; 
+    }
+    
+    public string Database
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageType> Tables
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<Comment> Comments
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<KindType> KindTables
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<DbType> Types
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<Function> Functions
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageProcedure> Procedures
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<GroupName> Groups
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageConstraints> Constraints
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<Collation> Collations
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<Script> Scripts
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+    public Script AppendScript(Bb.ModelDriven.ScriptManagers.ScriptElement scriptElement)
+    {
+        return default(Script);
+    
+    }
+    
+    public Bb.ModelDriven.ScriptManagers.ScriptManagerSection GetSolutionScriptReferential()
+    {
+        return default(Bb.ModelDriven.ScriptManagers.ScriptManagerSection);
+    
+    }
+    
+    public string GetClassName()
+    {
+        return default(string);
+    
+    }
+    
+    public string GetComponentName()
+    {
+        return default(string);
+    
+    }
+    
+    public System.ComponentModel.TypeConverter GetConverter()
+    {
+        return default(System.ComponentModel.TypeConverter);
+    
+    }
+    
+    public System.ComponentModel.EventDescriptor GetDefaultEvent()
+    {
+        return default(System.ComponentModel.EventDescriptor);
+    
+    }
+    
+    public System.ComponentModel.PropertyDescriptor GetDefaultProperty()
+    {
+        return default(System.ComponentModel.PropertyDescriptor);
+    
+    }
+    
+    public System.Object GetEditor(System.Type editorBaseType)
+    {
+        return default(System.Object);
+    
+    }
+    
+    public System.ComponentModel.EventDescriptorCollection GetEvents(System.Attribute[] attributes)
+    {
+        return default(System.ComponentModel.EventDescriptorCollection);
+    
+    }
+    
+    public System.ComponentModel.EventDescriptorCollection GetEvents()
+    {
+        return default(System.ComponentModel.EventDescriptorCollection);
+    
+    }
+    
+    public System.ComponentModel.AttributeCollection GetAttributes()
+    {
+        return default(System.ComponentModel.AttributeCollection);
+    
+    }
+    
+    public System.ComponentModel.PropertyDescriptorCollection GetProperties(System.Attribute[] attributes)
+    {
+        return default(System.ComponentModel.PropertyDescriptorCollection);
+    
+    }
+    
+
+}
+
+public class NamedElement : NamedElementBase
+{
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+    public System.Object GetPropertyValue(string propertyName)
+    {
+        return default(System.Object);
+    
+    }
+    
+
+}
+
+public enum CriticalLevelEnum 
+{
+    Optional = 0,
+    Message = 1,
+    Warning = 2,
+    Required = 3,
+
+}
+
+public class StorageType : TableModelElement
+{
+    public string Namespace
+    {
+        get; set; 
+    }
+    
+    public StorageRoot StorageRoot
+    {
+        get; set; 
+    }
+    
+    public Comment Comment
+    {
+        get; set; 
+    }
+    
+    public KindType Kind
+    {
+        get; set; 
+    }
+    
+    public string Description
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class Comment 
+{
+    public StorageRoot StorageRoot
+    {
+        get; set; 
+    }
+    
+    public StorageType Type
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class KindType : NamedElement
+{
+    public StorageRoot StorageRoot
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageTable> Table
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageType> StorageType
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class DbType : NamedElement
+{
+    public System.Boolean WithLength
+    {
+        get; set; 
+    }
+    
+    public System.Boolean WithPrecision
+    {
+        get; set; 
+    }
+    
+    public int LengthMax
+    {
+        get; set; 
+    }
+    
+    public int PrecisionMax
+    {
+        get; set; 
+    }
+    
+    public System.Boolean Max
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsArray
+    {
+        get; set; 
+    }
+    
+    public int LengthMin
+    {
+        get; set; 
+    }
+    
+    public int PrecisionMin
+    {
+        get; set; 
+    }
+    
+    public int LengthDefault
+    {
+        get; set; 
+    }
+    
+    public TypeFamilyEnum TypeFamily
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageColumn> StorageColumn
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<CutomTypeProperty> CutomTypeProperty
+    {
+        get; set; 
+    }
+    
+    public StorageRoot StorageRoot
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageOperationParameter> StorageOperationParameter
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<Function> Function
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageProcedure> StorageProcedure
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class Function : Operation
+{
+    public int ResultLength
+    {
+        get; set; 
+    }
+    
+    public int ResultPrecision
+    {
+        get; set; 
+    }
+    
+    public System.Boolean ResultIsArray
+    {
+        get; set; 
+    }
+    
+    public DbType Type
+    {
+        get; set; 
+    }
+    
+    public StorageRoot StorageRoot
+    {
+        get; set; 
+    }
+    
+    public string Namespace
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageOperationParameter> Parameters
+    {
+        get; set; 
+    }
+    
+    public GroupName Group
+    {
+        get; set; 
+    }
+    
+    public string Description
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class StorageProcedure : Operation
+{
+    public IEnumerable<DbType> Results
+    {
+        get; set; 
+    }
+    
+    public StorageRoot StorageRoot
+    {
+        get; set; 
+    }
+    
+    public string Namespace
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageOperationParameter> Parameters
+    {
+        get; set; 
+    }
+    
+    public GroupName Group
+    {
+        get; set; 
+    }
+    
+    public string Description
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class GroupName : NamedElement
+{
+    public StorageRoot StorageRoot
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<Operation> Operation
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class StorageConstraints : NamedElement
+{
+    public System.Boolean Virtual
+    {
+        get; set; 
+    }
+    
+    public string Description
+    {
+        get; set; 
+    }
+    
+    public StorageRoot StorageRoot
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+    public string GetClassName()
+    {
+        return default(string);
+    
+    }
+    
+    public string GetComponentName()
+    {
+        return default(string);
+    
+    }
+    
+    public System.ComponentModel.TypeConverter GetConverter()
+    {
+        return default(System.ComponentModel.TypeConverter);
+    
+    }
+    
+    public System.ComponentModel.EventDescriptor GetDefaultEvent()
+    {
+        return default(System.ComponentModel.EventDescriptor);
+    
+    }
+    
+    public System.ComponentModel.PropertyDescriptor GetDefaultProperty()
+    {
+        return default(System.ComponentModel.PropertyDescriptor);
+    
+    }
+    
+    public System.Object GetEditor(System.Type editorBaseType)
+    {
+        return default(System.Object);
+    
+    }
+    
+    public System.ComponentModel.EventDescriptorCollection GetEvents(System.Attribute[] attributes)
+    {
+        return default(System.ComponentModel.EventDescriptorCollection);
+    
+    }
+    
+    public System.ComponentModel.EventDescriptorCollection GetEvents()
+    {
+        return default(System.ComponentModel.EventDescriptorCollection);
+    
+    }
+    
+    public System.ComponentModel.AttributeCollection GetAttributes()
+    {
+        return default(System.ComponentModel.AttributeCollection);
+    
+    }
+    
+    public System.ComponentModel.PropertyDescriptorCollection GetProperties(System.Attribute[] attributes)
+    {
+        return default(System.ComponentModel.PropertyDescriptorCollection);
+    
+    }
+    
+
+}
+
+public class Collation : NamedElement
+{
+    public System.Boolean UseByDefault
+    {
+        get; set; 
+    }
+    
+    public StorageRoot StorageRoot
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageColumn> StorageColumn
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class Script 
+{
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public string PercistedBy
+    {
+        get; set; 
+    }
+    
+    public string Description
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ScriptManagers.ScriptElement ScriptElement
+    {
+        get; set; 
+    }
+    
+    public StorageRoot StorageRoot
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<ScriptParameter> ScriptParameters
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+    public string GetClassName()
+    {
+        return default(string);
+    
+    }
+    
+    public string GetComponentName()
+    {
+        return default(string);
+    
+    }
+    
+    public System.ComponentModel.TypeConverter GetConverter()
+    {
+        return default(System.ComponentModel.TypeConverter);
+    
+    }
+    
+    public System.ComponentModel.EventDescriptor GetDefaultEvent()
+    {
+        return default(System.ComponentModel.EventDescriptor);
+    
+    }
+    
+    public System.ComponentModel.PropertyDescriptor GetDefaultProperty()
+    {
+        return default(System.ComponentModel.PropertyDescriptor);
+    
+    }
+    
+    public System.Object GetEditor(System.Type editorBaseType)
+    {
+        return default(System.Object);
+    
+    }
+    
+    public System.ComponentModel.EventDescriptorCollection GetEvents(System.Attribute[] attributes)
+    {
+        return default(System.ComponentModel.EventDescriptorCollection);
+    
+    }
+    
+    public System.ComponentModel.EventDescriptorCollection GetEvents()
+    {
+        return default(System.ComponentModel.EventDescriptorCollection);
+    
+    }
+    
+    public System.ComponentModel.AttributeCollection GetAttributes()
+    {
+        return default(System.ComponentModel.AttributeCollection);
+    
+    }
+    
+    public System.ComponentModel.PropertyDescriptorCollection GetProperties(System.Attribute[] attributes)
+    {
+        return default(System.ComponentModel.PropertyDescriptorCollection);
+    
+    }
+    
+
+}
+
+public class StructureMetadataProperty 
+{
+    public System.Guid Uid
+    {
+        get; set; 
+    }
+    
+    public string Value
+    {
+        get; set; 
+    }
+    
+    public NamedElement NamedElement
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class NamedElementBase 
+{
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class TableModelElement : NamedElement
+{
+    public string Description
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class StorageTable : StorageType
+{
+    public System.Boolean WithCrud
+    {
+        get; set; 
+    }
+    
+    public string PrimaryConstraintName
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageColumn> Columns
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageTable> SubTables
+    {
+        get; set; 
+    }
+    
+    public StorageTable SuperTable
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageRelationship> Relationships
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageRelationship> SourceRelationship
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<PrimaryProperty> PrimaryProperties
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<KindType> KindType
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageConstraintIndex> StorageConstraintIndex
+    {
+        get; set; 
+    }
+    
+    public StorageConstraintIndex ConstraintUnique
+    {
+        get; set; 
+    }
+    
+    public string Namespace
+    {
+        get; set; 
+    }
+    
+    public StorageRoot StorageRoot
+    {
+        get; set; 
+    }
+    
+    public Comment Comment
+    {
+        get; set; 
+    }
+    
+    public KindType Kind
+    {
+        get; set; 
+    }
+    
+    public string Description
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+    public string GetClassName()
+    {
+        return default(string);
+    
+    }
+    
+    public string GetComponentName()
+    {
+        return default(string);
+    
+    }
+    
+    public System.ComponentModel.TypeConverter GetConverter()
+    {
+        return default(System.ComponentModel.TypeConverter);
+    
+    }
+    
+    public System.ComponentModel.EventDescriptor GetDefaultEvent()
+    {
+        return default(System.ComponentModel.EventDescriptor);
+    
+    }
+    
+    public System.ComponentModel.PropertyDescriptor GetDefaultProperty()
+    {
+        return default(System.ComponentModel.PropertyDescriptor);
+    
+    }
+    
+    public System.Object GetEditor(System.Type editorBaseType)
+    {
+        return default(System.Object);
+    
+    }
+    
+    public System.ComponentModel.EventDescriptorCollection GetEvents(System.Attribute[] attributes)
+    {
+        return default(System.ComponentModel.EventDescriptorCollection);
+    
+    }
+    
+    public System.ComponentModel.EventDescriptorCollection GetEvents()
+    {
+        return default(System.ComponentModel.EventDescriptorCollection);
+    
+    }
+    
+    public System.ComponentModel.AttributeCollection GetAttributes()
+    {
+        return default(System.ComponentModel.AttributeCollection);
+    
+    }
+    
+    public System.ComponentModel.PropertyDescriptorCollection GetProperties(System.Attribute[] attributes)
+    {
+        return default(System.ComponentModel.PropertyDescriptorCollection);
+    
+    }
+    
+    public List<StorageColumn> GetColumns()
+    {
+        return default(List<StorageColumn>);
+    
+    }
+    
+    public List<PrimaryProperty> GetKeys()
+    {
+        return default(List<PrimaryProperty>);
+    
+    }
+    
+
+}
+
+public enum TypeFamilyEnum 
+{
+    Text = 0,
+    NumericInteger64 = 1,
+    UniqueIdentifier = 2,
+    Date = 3,
+    Boolean = 4,
+    Xml = 5,
+    Other = 6,
+    Binary = 7,
+    Geography = 8,
+    Geometry = 9,
+    Money = 10,
+    Variant = 11,
+    Timestamp = 12,
+    NumericInteger32 = 13,
+    NumericDecimal32 = 14,
+    NumericDecimal64 = 15,
+    NumericDecimal16 = 16,
+    NumericInteger16 = 17,
+
+}
+
+public class StorageColumn : TableModelElement
+{
+    public string InitialValue
+    {
+        get; set; 
+    }
+    
+    public int Length
+    {
+        get; set; 
+    }
+    
+    public int Precision
+    {
+        get; set; 
+    }
+    
+    public string CheckExpression
+    {
+        get; set; 
+    }
+    
+    public System.Boolean Nullable
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsIdentity
+    {
+        get; set; 
+    }
+    
+    public string IdentityIncrement
+    {
+        get; set; 
+    }
+    
+    public string IdentitySeed
+    {
+        get; set; 
+    }
+    
+    public StorageTable StorageTable
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<ColumnModel> ColumnModel
+    {
+        get; set; 
+    }
+    
+    public DbType Type
+    {
+        get; set; 
+    }
+    
+    public Collation Collation
+    {
+        get; set; 
+    }
+    
+    public string Description
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+    public string GetClassName()
+    {
+        return default(string);
+    
+    }
+    
+    public string GetComponentName()
+    {
+        return default(string);
+    
+    }
+    
+    public System.ComponentModel.TypeConverter GetConverter()
+    {
+        return default(System.ComponentModel.TypeConverter);
+    
+    }
+    
+    public System.ComponentModel.EventDescriptor GetDefaultEvent()
+    {
+        return default(System.ComponentModel.EventDescriptor);
+    
+    }
+    
+    public System.ComponentModel.PropertyDescriptor GetDefaultProperty()
+    {
+        return default(System.ComponentModel.PropertyDescriptor);
+    
+    }
+    
+    public System.Object GetEditor(System.Type editorBaseType)
+    {
+        return default(System.Object);
+    
+    }
+    
+    public System.ComponentModel.EventDescriptorCollection GetEvents(System.Attribute[] attributes)
+    {
+        return default(System.ComponentModel.EventDescriptorCollection);
+    
+    }
+    
+    public System.ComponentModel.EventDescriptorCollection GetEvents()
+    {
+        return default(System.ComponentModel.EventDescriptorCollection);
+    
+    }
+    
+    public System.ComponentModel.AttributeCollection GetAttributes()
+    {
+        return default(System.ComponentModel.AttributeCollection);
+    
+    }
+    
+    public System.ComponentModel.PropertyDescriptorCollection GetProperties(System.Attribute[] attributes)
+    {
+        return default(System.ComponentModel.PropertyDescriptorCollection);
+    
+    }
+    
+
+}
+
+public class CutomTypeProperty : NamedElement
+{
+    public CustomType CustomType
+    {
+        get; set; 
+    }
+    
+    public DbType Type
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class StorageOperationParameter : NamedElement
+{
+    public StorageParameterWay Way
+    {
+        get; set; 
+    }
+    
+    public int Length
+    {
+        get; set; 
+    }
+    
+    public int Precision
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsArray
+    {
+        get; set; 
+    }
+    
+    public DbType Type
+    {
+        get; set; 
+    }
+    
+    public Operation Operation
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class Operation : TableModelElement
+{
+    public string Namespace
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageOperationParameter> Parameters
+    {
+        get; set; 
+    }
+    
+    public GroupName Group
+    {
+        get; set; 
+    }
+    
+    public string Description
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class ScriptParameter 
+{
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public string Type
+    {
+        get; set; 
+    }
+    
+    public string Value
+    {
+        get; set; 
+    }
+    
+    public string Description
+    {
+        get; set; 
+    }
+    
+    public System.Boolean Required
+    {
+        get; set; 
+    }
+    
+    public string Filter
+    {
+        get; set; 
+    }
+    
+    public Script Script
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+    public string GetClassName()
+    {
+        return default(string);
+    
+    }
+    
+    public string GetComponentName()
+    {
+        return default(string);
+    
+    }
+    
+    public System.ComponentModel.TypeConverter GetConverter()
+    {
+        return default(System.ComponentModel.TypeConverter);
+    
+    }
+    
+    public System.ComponentModel.EventDescriptor GetDefaultEvent()
+    {
+        return default(System.ComponentModel.EventDescriptor);
+    
+    }
+    
+    public System.ComponentModel.PropertyDescriptor GetDefaultProperty()
+    {
+        return default(System.ComponentModel.PropertyDescriptor);
+    
+    }
+    
+    public System.Object GetEditor(System.Type editorBaseType)
+    {
+        return default(System.Object);
+    
+    }
+    
+    public System.ComponentModel.EventDescriptorCollection GetEvents(System.Attribute[] attributes)
+    {
+        return default(System.ComponentModel.EventDescriptorCollection);
+    
+    }
+    
+    public System.ComponentModel.EventDescriptorCollection GetEvents()
+    {
+        return default(System.ComponentModel.EventDescriptorCollection);
+    
+    }
+    
+    public System.ComponentModel.AttributeCollection GetAttributes()
+    {
+        return default(System.ComponentModel.AttributeCollection);
+    
+    }
+    
+    public System.ComponentModel.PropertyDescriptorCollection GetProperties(System.Attribute[] attributes)
+    {
+        return default(System.ComponentModel.PropertyDescriptorCollection);
+    
+    }
+    
+
+}
+
+public class StorageRelationship : StorageConstraints
+{
+    public StorageTable SourceTable
+    {
+        get; set; 
+    }
+    
+    public StorageTable TargetTable
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<RelationshipMappedProperty> RelationshipMappedProperty
+    {
+        get; set; 
+    }
+    
+    public System.Boolean Virtual
+    {
+        get; set; 
+    }
+    
+    public string Description
+    {
+        get; set; 
+    }
+    
+    public StorageRoot StorageRoot
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class PrimaryProperty 
+{
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public StorageTable Table
+    {
+        get; set; 
+    }
+    
+    public PrimaryColumn PrimaryColumn
+    {
+        get; set; 
+    }
+    
+    public ReferenceStorageTable ReferenceStorageTable
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class StorageConstraintIndex : StorageConstraints
+{
+    public IEnumerable<StorageConstraintIndexColumn> Columns
+    {
+        get; set; 
+    }
+    
+    public StorageTable Table
+    {
+        get; set; 
+    }
+    
+    public StorageTable StorageTable
+    {
+        get; set; 
+    }
+    
+    public System.Boolean Virtual
+    {
+        get; set; 
+    }
+    
+    public string Description
+    {
+        get; set; 
+    }
+    
+    public StorageRoot StorageRoot
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class ColumnModel 
+{
+    public string Display
+    {
+        get; set; 
+    }
+    
+    public StorageColumn Column
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class CustomType : DbType
+{
+    public string Namespace
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<CutomTypeProperty> Attributes
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<CustomType> References
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<CustomType> SourceCustomType
+    {
+        get; set; 
+    }
+    
+    public System.Boolean WithLength
+    {
+        get; set; 
+    }
+    
+    public System.Boolean WithPrecision
+    {
+        get; set; 
+    }
+    
+    public int LengthMax
+    {
+        get; set; 
+    }
+    
+    public int PrecisionMax
+    {
+        get; set; 
+    }
+    
+    public System.Boolean Max
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsArray
+    {
+        get; set; 
+    }
+    
+    public int LengthMin
+    {
+        get; set; 
+    }
+    
+    public int PrecisionMin
+    {
+        get; set; 
+    }
+    
+    public int LengthDefault
+    {
+        get; set; 
+    }
+    
+    public TypeFamilyEnum TypeFamily
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageColumn> StorageColumn
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<CutomTypeProperty> CutomTypeProperty
+    {
+        get; set; 
+    }
+    
+    public StorageRoot StorageRoot
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageOperationParameter> StorageOperationParameter
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<Function> Function
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageProcedure> StorageProcedure
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public enum StorageParameterWay 
+{
+    In = 0,
+    Out = 1,
+    InOut = 2,
+
+}
+
+public class RelationshipMappedProperty 
+{
+    public string Display
+    {
+        get; set; 
+    }
+    
+    public string ColumnSource
+    {
+        get; set; 
+    }
+    
+    public string ColumnTarget
+    {
+        get; set; 
+    }
+    
+    public StorageRelationship StorageRelationship
+    {
+        get; set; 
+    }
+    
+    public SourceColumn SourceColumn
+    {
+        get; set; 
+    }
+    
+    public TargetColumn TargetColumn
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+    public List<StorageColumn> GetSourceColumns()
+    {
+        return default(List<StorageColumn>);
+    
+    }
+    
+    public List<StorageColumn> GetTargetColumns()
+    {
+        return default(List<StorageColumn>);
+    
+    }
+    
+
+}
+
+public class PrimaryColumn : ColumnModel
+{
+    public PrimaryProperty PrimaryProperty
+    {
+        get; set; 
+    }
+    
+    public string Display
+    {
+        get; set; 
+    }
+    
+    public StorageColumn Column
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class ReferenceStorageTable : ReferenceStorageTableBase
+{
+    public System.Guid ExternalModel
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<ReferenceStorageColumn> ReferenceStorageColumns
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<PrimaryProperty> ReferencePrimaryProperties
+    {
+        get; set; 
+    }
+    
+    public System.Boolean WithCrud
+    {
+        get; set; 
+    }
+    
+    public string PrimaryConstraintName
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageColumn> Columns
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageTable> SubTables
+    {
+        get; set; 
+    }
+    
+    public StorageTable SuperTable
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageRelationship> Relationships
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageRelationship> SourceRelationship
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<PrimaryProperty> PrimaryProperties
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<KindType> KindType
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageConstraintIndex> StorageConstraintIndex
+    {
+        get; set; 
+    }
+    
+    public StorageConstraintIndex ConstraintUnique
+    {
+        get; set; 
+    }
+    
+    public string Namespace
+    {
+        get; set; 
+    }
+    
+    public StorageRoot StorageRoot
+    {
+        get; set; 
+    }
+    
+    public Comment Comment
+    {
+        get; set; 
+    }
+    
+    public KindType Kind
+    {
+        get; set; 
+    }
+    
+    public string Description
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+    public List<StorageColumn> GetColumns()
+    {
+        return default(List<StorageColumn>);
+    
+    }
+    
+    public List<PrimaryProperty> GetKeys()
+    {
+        return default(List<PrimaryProperty>);
+    
+    }
+    
+
+}
+
+public class StorageConstraintIndexColumn 
+{
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsUnique
+    {
+        get; set; 
+    }
+    
+    public StorageConstraintIndex StorageConstraintIndex
+    {
+        get; set; 
+    }
+    
+    public UniqueColumn UniqueColumn
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class SourceColumn : ColumnModel
+{
+    public RelationshipMappedProperty RelationshipMappedProperty
+    {
+        get; set; 
+    }
+    
+    public string Display
+    {
+        get; set; 
+    }
+    
+    public StorageColumn Column
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class TargetColumn : ColumnModel
+{
+    public RelationshipMappedProperty RelationshipMappedProperty
+    {
+        get; set; 
+    }
+    
+    public string Display
+    {
+        get; set; 
+    }
+    
+    public StorageColumn Column
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class ReferenceStorageTableBase : StorageTable
+{
+    public System.Guid ExternalModel
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<ReferenceStorageColumn> ReferenceStorageColumns
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<PrimaryProperty> ReferencePrimaryProperties
+    {
+        get; set; 
+    }
+    
+    public System.Boolean WithCrud
+    {
+        get; set; 
+    }
+    
+    public string PrimaryConstraintName
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageColumn> Columns
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageTable> SubTables
+    {
+        get; set; 
+    }
+    
+    public StorageTable SuperTable
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageRelationship> Relationships
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageRelationship> SourceRelationship
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<PrimaryProperty> PrimaryProperties
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<KindType> KindType
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StorageConstraintIndex> StorageConstraintIndex
+    {
+        get; set; 
+    }
+    
+    public StorageConstraintIndex ConstraintUnique
+    {
+        get; set; 
+    }
+    
+    public string Namespace
+    {
+        get; set; 
+    }
+    
+    public StorageRoot StorageRoot
+    {
+        get; set; 
+    }
+    
+    public Comment Comment
+    {
+        get; set; 
+    }
+    
+    public KindType Kind
+    {
+        get; set; 
+    }
+    
+    public string Description
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class ReferenceStorageColumn : StorageColumn
+{
+    public System.Guid ReferenceColumn
+    {
+        get; set; 
+    }
+    
+    public ReferenceStorageTable ReferenceStorageTable
+    {
+        get; set; 
+    }
+    
+    public string InitialValue
+    {
+        get; set; 
+    }
+    
+    public int Length
+    {
+        get; set; 
+    }
+    
+    public int Precision
+    {
+        get; set; 
+    }
+    
+    public string CheckExpression
+    {
+        get; set; 
+    }
+    
+    public System.Boolean Nullable
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsIdentity
+    {
+        get; set; 
+    }
+    
+    public string IdentityIncrement
+    {
+        get; set; 
+    }
+    
+    public string IdentitySeed
+    {
+        get; set; 
+    }
+    
+    public StorageTable StorageTable
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<ColumnModel> ColumnModel
+    {
+        get; set; 
+    }
+    
+    public DbType Type
+    {
+        get; set; 
+    }
+    
+    public Collation Collation
+    {
+        get; set; 
+    }
+    
+    public string Description
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.TargetTypeElement ExtendedProperties
+    {
+        get; set; 
+    }
+    
+    public Bb.ModelDriven.ExtendedProperties.ExtendedPropertiesSection Configuration
+    {
+        get; set; 
+    }
+    
+    public string Name
+    {
+        get; set; 
+    }
+    
+    public IEnumerable<StructureMetadataProperty> StructureMetadataProperties
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+
+public class UniqueColumn : ColumnModel
+{
+    public StorageConstraintIndexColumn StorageConstraintIndexColumn
+    {
+        get; set; 
+    }
+    
+    public string Display
+    {
+        get; set; 
+    }
+    
+    public StorageColumn Column
+    {
+        get; set; 
+    }
+    
+    public System.Guid Id
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Partition Partition
+    {
+        get; set; 
+    }
+    
+    public Microsoft.VisualStudio.Modeling.Store Store
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsActive
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleted
+    {
+        get; set; 
+    }
+    
+    public System.Boolean IsDeleting
+    {
+        get; set; 
+    }
+    
+
+}
+#>

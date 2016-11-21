@@ -1,0 +1,1522 @@
+<#@ Assembly Name="Microsoft.CSharp" #>
+<#@ Assembly Name="System" #>
+<#@ Assembly Name="System.Configuration" #>
+<#@ Assembly Name="System.Core" #>
+<#@ Assembly Name="System.Data" #>
+<#@ Assembly Name="System.Data.DataSetExtensions" #>
+<#@ Assembly Name="System.Net.Http" #>
+<#@ Assembly Name="System.Xml" #>
+<#@ Assembly Name="System.Xml.Linq" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.CodeDom.Compiler" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Threading.Tasks" #>
+
+<#+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodeBlock.cs
+    public abstract class CodeBlock : CodeWriter
+    {
+
+        /// <summary>
+        /// Gets the mask.
+        /// </summary>
+        /// <value>
+        /// The mask.
+        /// </value>
+        public string Mask { get; private set; }
+
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CodeBlock"/> class.
+        /// </summary>
+        /// <param name="codeWriter">The code writer.</param>
+        /// <param name="mask">The mask.</param>
+        /// <param name="args">The arguments.</param>
+        internal CodeBlock(CodeWriter codeWriter, string mask, params object[] args)
+            : base(codeWriter, args)
+        {
+            this.Mask = mask;
+            StartBlock();
+        }
+
+        /// <summary>
+        /// Starts the block.
+        /// </summary>
+        protected virtual void StartBlock()
+        {
+            sb.Indent++;
+        }
+
+        /// <summary>
+        /// Ends the block.
+        /// </summary>
+        protected abstract void EndBlock();
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        public override void Dispose()
+        {
+            base.Dispose();
+            EndBlock();
+        }
+
+        /// <summary>
+        /// Converts the specified kind.
+        /// </summary>
+        /// <param name="kind">The kind.</param>
+        /// <returns></returns>
+        protected static string Convert(KindType kind)
+        {
+
+            string a = string.Empty;
+
+            if ((kind & KindType.Abstract) == KindType.Abstract)
+                a += " abstract";
+
+            if ((kind & KindType.Partial) == KindType.Partial)
+                a += " partial";
+
+            if ((kind & KindType.Static) == KindType.Static)
+                a += " static";
+
+            if ((kind & KindType.Sealed) == KindType.Sealed)
+                a += "sealed";
+
+            if ((kind & KindType.Async) == KindType.Async)
+                a += "async";
+
+
+            return a.Trim();
+        }
+
+		
+        /// <summary>
+        /// Write attribute
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <param name="args">The arguments.</param>
+        public void Attribute(string name, params string[] args)
+        {
+
+            if (name.EndsWith("Attribute"))
+                name = name.Substring(0, name.Length - 9);
+
+            if (args.Length > 0)
+            {
+                Format("[{0}(", name);
+                string comma = "";
+                foreach (var item in args)
+                {
+                    Write(comma);
+                    Write(item);
+                    comma = ", ";
+                }
+
+                WriteLine(")]");
+
+            }
+            else
+                FormatLine("[{0}]", name);
+
+        }
+
+		public string WriteConstant(string value, bool isString, bool isChar)
+        {
+			if (isString)
+				return @"""" + value + @"""";
+			if (isChar)
+				return "'" + value + "'";
+			else
+				return value;
+        }		
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodeBlock.cs
+
+	public class MemberInitializer
+    {
+
+        public MemberInitializer(string value)
+        {
+			this.value = value;
+        }
+
+        public MemberInitializer(string name, string value)
+        {
+			this.Name = name;
+			this.value = value;
+        }
+
+		public string Name{get; set;}
+		
+		public string value {get; set;}
+
+    }
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodeClassWriter.cs
+    public class CodeClassWriter : CodeTypeWriter
+    {
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CodeClassWriter"/> class.
+        /// </summary>
+        /// <param name="codeWriter">The code writer.</param>
+        /// <param name="visibility">The visibility.</param>
+        /// <param name="kindType">Type of the kind.</param>
+        /// <param name="name">The name.</param>
+        /// <param name="baseType">Type of the base.</param>
+        internal CodeClassWriter(CodeWriter codeWriter, Visibility visibility, KindType kindType, string name, string baseType)
+            : base(codeWriter, visibility, kindType, "class", name, baseType)
+        {
+
+        }
+
+
+        /// <summary>
+        /// Methods the specified visibility.
+        /// </summary>
+        /// <param name="visibility">The visibility.</param>
+        /// <param name="kindType">Type of the kind.</param>
+        /// <param name="type">The type.</param>
+        /// <param name="name">The name.</param>
+        /// <returns></returns>
+        public CodeMethod Method(Visibility visibility, KindType kindType, string type, string name)
+        {
+            return new CodeMethod(this, visibility, kindType, type, name);
+        }
+
+        /// <summary>
+        /// Properties the specified visibility.
+        /// </summary>
+        /// <param name="visibility">The visibility.</param>
+        /// <param name="kindType">Type of the kind.</param>
+        /// <param name="type">The type.</param>
+        /// <param name="name">The name.</param>
+        /// <returns></returns>
+        public CodeProperty Property(Visibility visibility, KindType kindType, string type, string name)
+        {
+            return new CodeProperty(this, visibility, kindType, type, name);
+
+        }
+
+		public void Field(Visibility visibility, bool isStatic, string type, string name, string value = null)
+        {
+
+			Write(visibility.ToString().ToLower());
+			if (isStatic)
+				Write(" static");
+			Write(" " + type + " " + name);
+			if(!string.IsNullOrEmpty(value))
+				Write(" = " + value);
+				
+        }
+
+		public NewObjectBlock NewObject(string type, params string[] args)
+        {
+
+			return new NewObjectBlock(this, type, args);
+			
+        }
+
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodeClassWriter.cs
+
+    public class NewObjectBlock : CodeBlock
+    {
+
+		/// <summary>
+        /// Initializes a new instance of the <see cref="NewObjectBlock"/> class.
+        /// </summary>
+        /// <param name="writer">The writer.</param>
+        /// <param name="condition">The condition.</param>
+        internal NewObjectBlock(CodeWriter writer, string type, params string[] members)
+            : base(writer, "new {0} ({1})", type, string.Join(",", members))
+        {
+        }
+
+        /// <summary>
+        /// Starts the block.
+        /// </summary>
+        protected override void StartBlock()
+        {
+            FormatLine(this.Mask, this.Args);
+            WriteLine("{");
+            base.StartBlock();
+        }
+
+        /// <summary>
+        /// Ends the block.
+        /// </summary>
+        protected override void EndBlock()
+        {
+            sb.WriteLine("}");
+        }
+
+		public void AppendProperty(params MemberInitializer[] members)
+        {
+			string comma = "  ";
+			foreach (MemberInitializer m in members)
+			{
+				Write(comma);
+				Write(m.Name);
+				Write(" = ");
+				Write(m.value);
+				comma = ", ";
+				WriteLine("");
+			}
+         }
+
+    }
+
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodeConditionnalBlock.cs
+    public class CodeConditionnalBlock : CodeBlock
+    {
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CodeConditionnalBlock"/> class.
+        /// </summary>
+        /// <param name="writer">The writer.</param>
+        /// <param name="condition">The condition.</param>
+        internal CodeConditionnalBlock(CodeWriter writer, string condition)
+            : base(writer, "if ({0})", condition)
+        {
+
+        }
+
+        /// <summary>
+        /// Starts the block.
+        /// </summary>
+        protected override void StartBlock()
+        {
+            FormatLine(this.Mask, this.Args);
+            WriteLine("{");
+            base.StartBlock();
+        }
+
+        /// <summary>
+        /// Ends the block.
+        /// </summary>
+        protected override void EndBlock()
+        {
+            sb.WriteLine("}");
+            sb.WriteLine();
+        }
+
+        /// <summary>
+        /// Generate true the statements block.
+        /// </summary>
+        /// <returns></returns>
+        public CodePropertyBlock TrueStatements()
+        {
+            return new CodePropertyBlock(this, string.Empty);
+        }
+
+        /// <summary>
+        /// Generate Falses the statements block.
+        /// </summary>
+        /// <returns></returns>
+        public CodePropertyBlock FalseStatements()
+        {
+            return new CodePropertyBlock(this, "else");
+        }
+
+        /// <summary>
+        /// Generate "{ get; set; }"
+        /// </summary>
+        public void AutoGetSet()
+        {
+            WriteLine("get; set; ");
+        }
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodeConditionnalBlock.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodeInterfaceWriter.cs
+    public class CodeInterfaceWriter : CodeTypeWriter
+    {
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CodeInterfaceWriter"/> class.
+        /// </summary>
+        /// <param name="codeWriter">The code writer.</param>
+        /// <param name="visibility">The visibility.</param>
+        /// <param name="kindType">Type of the kind.</param>
+        /// <param name="name">The name.</param>
+        /// <param name="baseType">Type of the base.</param>
+        internal CodeInterfaceWriter(CodeWriter codeWriter, Visibility visibility, KindType kindType, string name, string baseType)
+            : base(codeWriter, visibility, kindType, "interface", name, baseType)
+        {
+
+        }
+
+        /// <summary>
+        /// Starts the method.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <param name="name">The name.</param>
+        /// <param name="generics">The generics.</param>
+        public void StartMethod(string type, string name, string generics = null)
+        {
+            if (string.IsNullOrEmpty(generics))
+                Format("{0} {1}(", type, name);
+            else
+                Format("{0} {1}<{2}>(", type, name, generics);
+
+        }
+
+        /// <summary>
+        /// Ends the method.
+        /// </summary>
+        /// <param name="genericConstraints">The generic constraints.</param>
+        public void EndMethod(string genericConstraints = null)
+        {
+            if (!string.IsNullOrEmpty(genericConstraints))
+                Format(") {0};");
+            else
+                WriteLine(");");
+        }
+
+        /// <summary>
+        /// Properties the specified type.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <param name="name">The name.</param>
+        /// <param name="hasget">if set to <c>true</c> [hasget].</param>
+        /// <param name="hasset">if set to <c>true</c> [hasset].</param>
+        public void Property(string type, string name, bool hasget = true, bool hasset = true)
+        {
+            Format("{0} {1} ", type, name);
+            WriteLine(" {");
+            if (hasget)
+                Write(" get;");
+            if (hasset)
+                Write(" set;");
+            WriteLine(" }");
+        }
+
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodeInterfaceWriter.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodeMethod.cs
+    public class CodeMethod : CodeBlock
+    {
+
+        internal CodeMethod(CodeWriter writer, Visibility visibility, KindType kindType, string type, string name)
+            : base(writer, "{0} {1} {2} {3}", visibility.ToString().ToLower(), Convert(kindType), type, name)
+        {
+
+        }
+
+        /// <summary>
+        /// Starts the block.
+        /// </summary>
+        protected override void StartBlock()
+        {
+            Format(this.Mask, this.Args);
+        }
+
+        /// <summary>
+        /// Ends the block.
+        /// </summary>
+        protected override void EndBlock()
+        {
+            sb.WriteLine();
+            sb.WriteLine("}");
+            sb.WriteLine();
+        }
+
+        /// <summary>
+        /// Starts the generic.
+        /// </summary>
+        public void StartGeneric()
+        {
+            sb.Write("<");
+        }
+
+        /// <summary>
+        /// Ends the generic.
+        /// </summary>
+        public void EndGeneric()
+        {
+            sb.Write(">");
+        }
+
+        /// <summary>
+        /// Starts the parameters.
+        /// </summary>
+        public void StartParameters()
+        {
+            sb.Write("(");
+        }
+
+        /// <summary>
+        /// Ends the parameters.
+        /// </summary>
+        public void EndParameters()
+        {
+            sb.WriteLine(")");
+        }
+
+        /// <summary>
+        /// Starts the boby.
+        /// </summary>
+        public void StartBoby()
+        {
+            sb.WriteLine("{");
+            base.StartBlock();
+        }
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodeMethod.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodeNamespaceWriter.cs
+    public class CodeNamespaceWriter : CodeBlock
+    {
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CodeNamespaceWriter"/> class.
+        /// </summary>
+        /// <param name="codeWriter">The code writer.</param>
+        /// <param name="args">The arguments.</param>
+        internal CodeNamespaceWriter(CodeWriter codeWriter, params object[] args)
+            : base(codeWriter, "namespace {0}", args)
+        {
+
+
+        }
+
+        /// <summary>
+        /// Starts the block.
+        /// </summary>
+        protected override void StartBlock()
+        {
+            FormatLine(this.Mask, this.Args);
+            sb.WriteLine("{");
+            base.StartBlock();
+        }
+
+        /// <summary>
+        /// Ends the block.
+        /// </summary>
+        protected override void EndBlock()
+        {
+            sb.WriteLine();
+            sb.WriteLine("}");
+        }
+
+        /// <summary>
+        /// Imports the specified name.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        public void Import(string name)
+        {
+            FormatLine("using {0};", name);
+        }
+
+        /// <summary>
+        /// Classes the specified visibility.
+        /// </summary>
+        /// <param name="visibility">The visibility.</param>
+        /// <param name="kindType">Type of the kind.</param>
+        /// <param name="name">The name.</param>
+        /// <param name="baseType">Type of the base.</param>
+        /// <returns></returns>
+        public CodeClassWriter Class(Visibility visibility, KindType kindType, string name, string baseType)
+        {
+            return new CodeClassWriter(this, visibility, kindType, name, baseType);
+        }
+
+        /// <summary>
+        /// Interfaces the specified visibility.
+        /// </summary>
+        /// <param name="visibility">The visibility.</param>
+        /// <param name="name">The name.</param>
+        /// <param name="baseType">Type of the base.</param>
+        /// <param name="isPartial">if set to <c>true</c> [is partial].</param>
+        /// <returns></returns>
+        public CodeInterfaceWriter Interface(Visibility visibility, string name, string baseType, bool isPartial = false)
+        {
+            return new CodeInterfaceWriter(this, visibility, isPartial ? KindType.Partial : KindType.None, name, baseType);
+        }
+
+        /// <summary>
+        /// Writes the parameter.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <param name="name">The name.</param>
+        /// <param name="way">The way.</param>
+        public void WriteParameter(string type, string name, WayEnum way)
+        {
+
+            switch (way)
+            {
+                case WayEnum.Params:
+                    Write("params ");
+                    break;
+                case WayEnum.In:
+                    Write("in ");
+                    break;
+                case WayEnum.Out:
+                    Write("out ");
+                    break;
+                case WayEnum.Ref:
+                    Write("ref ");
+                    break;
+                case WayEnum.None:
+                default:
+                    break;
+            }
+
+            Write(type);
+            Write(" ");
+            Write(name);
+
+        }
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodeNamespaceWriter.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodeProperty.cs
+    public class CodeProperty : CodeBlock
+    {
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CodeProperty"/> class.
+        /// </summary>
+        /// <param name="writer">The writer.</param>
+        /// <param name="visibility">The visibility.</param>
+        /// <param name="kindType">Type of the kind.</param>
+        /// <param name="type">The type.</param>
+        /// <param name="name">The name.</param>
+        internal CodeProperty(CodeWriter writer, Visibility visibility, KindType kindType, string type, string name)
+            : base(writer, "{0} {1} {2} {3}", visibility.ToString().ToLower(), Convert(kindType), type, name)
+        {
+
+        }
+
+        /// <summary>
+        /// Starts the block.
+        /// </summary>
+        protected override void StartBlock()
+        {
+            FormatLine(this.Mask, this.Args);
+            WriteLine("{");
+            base.StartBlock();
+        }
+
+        /// <summary>
+        /// Ends the block.
+        /// </summary>
+        protected override void EndBlock()
+        {
+            sb.WriteLine("}");
+            sb.WriteLine();
+        }
+
+        /// <summary>
+        /// Starts the get.
+        /// </summary>
+        /// <returns></returns>
+        public CodePropertyBlock StartGet()
+        {
+            return new CodePropertyBlock(this, "get");
+        }
+
+        /// <summary>
+        /// Starts the set.
+        /// </summary>
+        /// <returns></returns>
+        public CodePropertyBlock StartSet()
+        {
+            return new CodePropertyBlock(this, "set");
+        }
+
+        /// <summary>
+        /// Automatics the get set.
+        /// </summary>
+        public void AutoGetSet()
+        {
+            WriteLine("get; set; ");
+        }
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodeProperty.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodePropertyBlock.cs
+    public class CodePropertyBlock : CodeBlock
+    {
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CodePropertyBlock"/> class.
+        /// </summary>
+        /// <param name="writer">The writer.</param>
+        /// <param name="name">The name.</param>
+        internal CodePropertyBlock(CodeWriter writer, string name)
+            : base(writer, name)
+        {
+
+        }
+
+        /// <summary>
+        /// Starts the block.
+        /// </summary>
+        protected override void StartBlock()
+        {
+            if (!string.IsNullOrEmpty(this.Mask))
+                WriteLine(this.Mask);
+            WriteLine("{");
+            base.StartBlock();
+        }
+
+        /// <summary>
+        /// Ends the block.
+        /// </summary>
+        protected override void EndBlock()
+        {
+            sb.WriteLine();
+            sb.WriteLine("}");
+        }
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodePropertyBlock.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodeTypeWriter.cs
+    public class CodeTypeWriter : CodeBlock
+    {
+
+        internal CodeTypeWriter(CodeWriter codeWriter, Visibility visibility, KindType kindType, string kind, string name, string baseType)
+            : base(codeWriter, "{0} {1} {2} {3} {4}",
+                  visibility.ToString().ToLower(),
+                  Convert(kindType),
+                  kind,
+                  name,
+                  string.IsNullOrEmpty(baseType) ? string.Empty : ": " + baseType
+                  )
+        {
+
+        }
+
+        /// <summary>
+        /// Starts the block.
+        /// </summary>
+        protected override void StartBlock()
+        {
+            sb.WriteLine();
+            FormatLine(this.Mask, this.Args);
+            sb.WriteLine("{");
+            base.StartBlock();
+        }
+
+        /// <summary>
+        /// Ends the block.
+        /// </summary>
+        protected override void EndBlock()
+        {
+            sb.WriteLine();
+            sb.WriteLine("}");
+        }
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodeTypeWriter.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodeWriter.cs
+    public class CodeWriter : IDisposable
+    {
+
+        /// <summary>
+        /// </summary>
+        protected readonly IndentedTextWriter sb;
+
+        private MemoryStream stream;
+        private StreamWriter streamWr;
+        private CodeWriter parent;
+
+        /// <summary>
+        /// Gets the arguments.
+        /// </summary>
+        /// <value>
+        /// The arguments.
+        /// </value>
+        public object[] Args { get; private set; }
+        /// <summary>
+        /// Gets the filename.
+        /// </summary>
+        /// <value>
+        /// The filename.
+        /// </value>
+        public string Filename { get; set; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CodeWriter"/> class.
+        /// </summary>
+        public CodeWriter()
+        {
+
+            this.stream = new MemoryStream();
+            this.streamWr = new StreamWriter(stream);
+            this.sb = new System.CodeDom.Compiler.IndentedTextWriter(streamWr);
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CodeWriter"/> class.
+        /// </summary>
+        /// <param name="codeWriter">The code writer.</param>
+        /// <param name="args">The arguments.</param>
+        protected CodeWriter(CodeWriter codeWriter, params object[] args)
+        {
+            this.Args = args;
+            this.parent = codeWriter;
+            this.sb = codeWriter.sb;
+
+        }
+
+        /// <summary>
+        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="System.String" /> that represents this instance.
+        /// </returns>
+        public override string ToString()
+        {
+            this.sb.Flush();
+            this.streamWr.Flush();
+            stream.Flush();
+            byte[] datas = stream.ToArray();
+            return System.Text.Encoding.UTF8.GetString(datas);
+        }
+
+        /// <summary>
+        /// Writes the file.
+        /// </summary>
+        /// <param name="file">The file.</param>
+        public void WriteFile(string file)
+        {
+
+            var txt = this.ToString();
+            var datas = System.Text.Encoding.UTF8.GetBytes(txt);
+            FileInfo f = new FileInfo(file);
+            if (f.Exists)
+                f.Delete();
+            using (var stream = f.OpenWrite())
+            {
+                stream.Write(datas, 0, datas.Length);
+                stream.Flush();
+
+            }
+
+        }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        public virtual void Dispose()
+        {
+            if (this.parent != null)
+                this.sb.Indent--;
+        }
+
+        /// <summary>
+        /// generate a new namespace
+        /// </summary>
+        /// <param name="namespace">The namespace.</param>
+        /// <returns></returns>
+        public CodeNamespaceWriter Namespace(string @namespace)
+        {
+            return new CodeNamespaceWriter(this, @namespace);
+        }
+
+        /// <summary>
+        /// append text in the output
+        /// </summary>
+        /// <param name="format">The format.</param>
+        /// <param name="args">The arguments.</param>
+        public void Format(string format, params object[] args)
+        {
+            var txt = string.Format(format, args)
+                .Replace("  ", " ")
+                .Replace("  ", " ")
+                .Replace("  ", " ")
+                ;
+            sb.Write(txt);
+        }
+
+        /// <summary>
+        /// append text in the output
+        /// </summary>
+        /// <param name="format">The format.</param>
+        /// <param name="args">The arguments.</param>
+        public void FormatLine(string format, params object[] args)
+        {
+            var txt = string.Format(format, args)
+                .Replace("  ", " ")
+                .Replace("  ", " ")
+                .Replace("  ", " ")
+                ;
+
+            sb.WriteLine(txt);
+        }
+
+        /// <summary>
+        /// append new text in the output
+        /// </summary>
+        /// <param name="txt">The v.</param>
+        public void Write(string txt)
+        {
+            sb.Write(txt);
+        }
+
+        /// <summary>
+        /// append text in the output
+        /// </summary>
+        /// <param name="txt">The text.</param>
+        public void WriteLine(string txt)
+        {
+            sb.WriteLine(txt);
+        }
+
+        /// <summary>
+        /// append empty line in the output
+        /// </summary>
+        public void WriteLine()
+        {
+            sb.WriteLine();
+        }
+
+        /// <summary>
+        /// Writes a comment in a specific balise
+        /// </summary>
+        /// <param name="balise">The v.</param>
+        /// <param name="text">text to write in the block of comment.</param>
+        public void WriteComment(string balise, string text, bool returnLine = true)
+        {
+            if (!string.IsNullOrEmpty(text))
+            {
+                var u = text.Split('\r');
+                FormatLine("/// <{0}>", balise);
+                foreach (var item in u)
+                    FormatLine("/// {0}", item);
+                Format("/// </{0}>", balise);
+				if (returnLine)
+					WriteLine("");
+            }
+        }
+
+        /// <summary>
+        /// Writes the comment.
+        /// </summary>
+        /// <param name="balise">The v.</param>
+        /// <param name="summary">The summary.</param>
+        /// <param name="attributeName">Name of the attribute.</param>
+        /// <param name="attributeValue">The attribute value.</param>
+        public void WriteComment(string balise, string summary, string attributeName, string attributeValue)
+        {
+
+            if (!string.IsNullOrEmpty(balise))
+            {
+                FormatLine(@"/// <{0} {1}=""{2}"">", balise, attributeName, attributeValue);
+                var u = summary.Split('\r');
+                Format("/// {0}", u[0]);
+                for (int i = 1; i < u.Length; i++)
+                {
+                    WriteLine();
+                    Format("/// {0}", u[i]);
+                }
+
+                if (u.Length == 1)
+                FormatLine("</{0}>", balise);
+                else
+                    FormatLine("/// </{0}>", balise);
+            }
+          
+        }
+    
+		public string WriteType(Type type)
+        {
+			var t = new ParsedAssemblyQualifiedName(type.AssemblyQualifiedName);
+			var result = t.ToCSharp(FormatRule.System);
+			return result;
+        }
+
+		public string WriteType(string assemblyQualifiedName)
+        {
+			var t = new ParsedAssemblyQualifiedName(assemblyQualifiedName);
+			var result = t.ToCSharp(FormatRule.System);
+			return result;
+        }
+	
+    private class ParsedAssemblyQualifiedName
+    {
+
+        private string _name;
+        private string _namespace;
+
+        public string Namespace
+        {
+            get
+            {
+                if (_namespace == null)
+                {
+
+                    StringBuilder sb = new StringBuilder();
+
+                    for (int i = 0; i < TypeName.Length; i++)
+                    {
+
+                        char c = TypeName[i];
+
+                        if (c == ' ' || c == '`' || c == '+')
+                            break;
+
+                        sb.Append(c);
+
+                    }
+
+                    this._namespace = sb.ToString();
+
+                    int l = this._namespace.LastIndexOf('.');
+                    if (l > 0)
+                        this._namespace = this._namespace.Substring(0, l);
+
+                }
+
+                return _namespace;
+
+            }
+        }
+
+        public string Name
+        {
+            get
+            {
+
+                if (_name == null)
+                {
+                    var n = Namespace;
+                    _name = TypeName.Substring(n.Length, TypeName.Length - n.Length);
+                    _name = _name.TrimStart('.');
+
+                    StringBuilder sb = new StringBuilder();
+
+                    for (int i = 0; i < _name.Length; i++)
+                    {
+
+                        char c = _name[i];
+
+                        if (c == '`')
+                        {
+                            //    sb.Append(c);
+                            //    while (char.IsDigit(c = _name[++i]))
+                            //        sb.Append(c);
+                            break;
+                        }
+
+                        if (c == ' ' || c == '+')
+                            break;
+
+                        sb.Append(c);
+
+                    }
+
+                    this._name = sb.ToString();
+
+                }
+
+                return _name;
+
+            }
+        }
+
+        public bool IsValid { get; private set; }
+
+        public string AssemblyDescriptionString { get; private set; }
+
+        public string TypeName { get; private set; }
+
+        public string Path { get; private set; }
+
+        public bool IsRef { get; private set; }
+
+        public bool IsArray { get; private set; }
+
+        public int RankArray { get; private set; }
+
+        public bool IsPointer { get; private set; }
+
+        public string ShortAssemblyName { get; private set; }
+
+        public string Version { get; private set; }
+
+        public string Culture { get; private set; }
+
+        public string PublicKeyToken { get; private set; }
+        public int GenericRank { get; private set; }
+        public bool IsGeneric { get; private set; }
+
+        private List<ParsedAssemblyQualifiedName> _genericParameters = new List<ParsedAssemblyQualifiedName>();
+        public Lazy<string> CSharpStyleName;
+        public Lazy<string> VBNetStyleName;
+
+        public ParsedAssemblyQualifiedName(string AssemblyQualifiedName)
+        {
+
+            IsValid = false;
+
+            if (string.IsNullOrEmpty(AssemblyQualifiedName))
+                return;
+
+            try
+            {
+
+                Parse(AssemblyQualifiedName);
+                var __n = this.Name;
+
+                if (__n.EndsWith("]"))
+                {
+
+                    this.IsArray = true;
+                    __n = __n.Substring(0, __n.Length - 1);
+                    this.RankArray++;
+
+                    while (true)
+                    {
+                        if (__n.EndsWith(","))
+                        {
+                            __n = __n.Substring(0, __n.Length - 1);
+                            this.RankArray++;
+                        }
+                        else if (__n.EndsWith("["))
+                        {
+                            __n = __n.Substring(0, __n.Length - 1);
+                            break;
+                        }
+                        else if (__n.Length == 0)
+                            break;
+                    }
+
+                    _name = null;
+                    if (!string.IsNullOrEmpty(this.Namespace))
+                        this.TypeName = this.Namespace + ".";
+
+                    this.TypeName += __n;
+
+                }
+
+                IsValid = true;
+            }
+            catch (Exception)
+            {
+
+            }
+
+        }
+
+        private void Parse(string AssemblyQualifiedName)
+        {
+
+            int index = -1;
+            block rootBlock = new block();
+
+            int bcount = 0;
+            block currentBlock = rootBlock;
+            for (int i = 0; i < AssemblyQualifiedName.Length; ++i)
+            {
+                char c = AssemblyQualifiedName[i];
+                if (c == '`')
+                {
+                    string count = string.Empty;
+                    for (int j = i + 1; j < AssemblyQualifiedName.Length; j++)
+                    {
+                        char c2 = AssemblyQualifiedName[j];
+                        if (char.IsDigit(c2))
+                            count += c2;
+                        else
+                            break;
+                    }
+                    int _count = 0;
+                    if (int.TryParse(count, out _count))
+                    {
+                        this.IsGeneric = true;
+                        this.GenericRank = _count;
+                    }
+                }
+
+                if (c == '[')
+                {
+                    if (AssemblyQualifiedName[i + 1] == ']') // Array type.
+                        i++;
+                    else
+                    {
+                        ++bcount;
+                        var b = new block() { iStart = i + 1, level = bcount, parentBlock = currentBlock };
+                        currentBlock.innerBlocks.Add(b);
+                        currentBlock = b;
+                    }
+                }
+                else if (c == ']')
+                {
+                    currentBlock.iEnd = i - 1;
+                    if (AssemblyQualifiedName[currentBlock.iStart] != '[')
+                    {
+                        currentBlock.parsedAssemblyQualifiedName = new ParsedAssemblyQualifiedName(AssemblyQualifiedName.Substring(currentBlock.iStart, i - currentBlock.iStart));
+                        if (bcount == 2)
+                            this._genericParameters.Add(currentBlock.parsedAssemblyQualifiedName);
+                    }
+                    currentBlock = currentBlock.parentBlock;
+                    --bcount;
+                }
+                else if (bcount == 0 && c == ',')
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            this.TypeName = AssemblyQualifiedName.Substring(0, index);
+
+            if (this.TypeName.EndsWith("&"))
+            {
+                this.TypeName = this.TypeName.Substring(0, this.TypeName.Length - 1);
+                this.IsRef = true;
+            }
+
+            if (this.TypeName.EndsWith("*"))
+            {
+                this.TypeName = this.TypeName.Substring(0, this.TypeName.Length - 1);
+                this.IsPointer = true;
+            }
+
+            this.CSharpStyleName = new Lazy<string>(() => { return this.LanguageStyle("<", ">"); });
+
+            this.VBNetStyleName = new Lazy<string>(() => { return this.LanguageStyle("(Of ", ")"); });
+
+            this.AssemblyDescriptionString = AssemblyQualifiedName.Substring(index + 2);
+
+            {
+                List<string> parts = AssemblyDescriptionString.Split(',').Select(x => x.Trim())
+                                                                         .ToList();
+                this.Version = LookForPairThenRemove(parts, "Version");
+                this.Culture = LookForPairThenRemove(parts, "Culture");
+                this.Path = LookForPairThenRemove(parts, "Path");
+                this.PublicKeyToken = LookForPairThenRemove(parts, "PublicKeyToken");
+                if (parts.Count > 0)
+                    this.ShortAssemblyName = parts[0];
+            }
+
+        }
+
+        public void AddGeneric(string typeName3)
+        {
+            if (this._genericParameters.Count >= this.GenericRank)
+                throw new InvalidOperationException("The type is allready full and can't accept more generic parameter.");
+            this._genericParameters.Add(new ParsedAssemblyQualifiedName(typeName3));
+        }
+
+        internal string LanguageStyle(string prefix, string suffix)
+        {
+            if (this._genericParameters.Count > 0)
+            {
+                StringBuilder sb = new StringBuilder(this.TypeName.Substring(0, this.TypeName.IndexOf('`')));
+                sb.Append(prefix);
+                bool pendingElement = false;
+                foreach (var param in this._genericParameters)
+                {
+                    if (pendingElement)
+                        sb.Append(", ");
+                    sb.Append(param.LanguageStyle(prefix, suffix));
+                    pendingElement = true;
+                }
+                sb.Append(suffix);
+                return sb.ToString();
+            }
+            else
+                return this.TypeName;
+        }
+
+        class block
+        {
+            internal int iStart;
+            internal int iEnd;
+            internal int level;
+            internal block parentBlock;
+            internal List<block> innerBlocks = new List<block>();
+            internal ParsedAssemblyQualifiedName parsedAssemblyQualifiedName;
+        }
+
+        static string LookForPairThenRemove(List<string> strings, string Name)
+        {
+            for (int istr = 0; istr < strings.Count; istr++)
+            {
+                string s = strings[istr];
+                int i = s.IndexOf(Name);
+                if (i == 0)
+                {
+                    int i2 = s.IndexOf('=');
+                    if (i2 > 0)
+                    {
+                        string ret = s.Substring(i2 + 1);
+                        strings.RemoveAt(istr);
+                        return ret;
+                    }
+                }
+            }
+            return null;
+        }
+
+
+#if DEBUG
+        // Makes debugging easier.
+        public override string ToString()
+        {
+            return this.CSharpStyleName.ToString();
+        }
+#endif
+
+
+        public string ToCSharp(FormatRule rule = FormatRule.None)
+        {
+
+            string result;
+            Type type;
+            StringBuilder sb = new StringBuilder((Namespace.Length + Name.Length) * 5);
+
+            if (!string.IsNullOrEmpty(this.Namespace))
+            {
+                sb.Append(this.Namespace);
+                sb.Append(_dot);
+            }
+
+            sb.Append(this.Name);
+
+            if (rule == FormatRule.System)
+            {
+                type = Type.GetType(sb.ToString());
+                if (type != null)
+                    ReduceSystem(type, sb);
+            }
+
+            if (this.IsArray)
+                AppendArray(sb);
+
+            else if (this.IsGeneric)
+            {
+                int _countGeneric = 0;
+                sb.Append("<");
+                string comma = string.Empty;
+                foreach (var item in this._genericParameters)
+                {
+                    sb.Append(comma);
+                    sb.Append(item.ToCSharp(rule));
+                    comma = ", ";
+                    _countGeneric++;
+                }
+
+                comma = ",";
+
+                for (int i = _countGeneric +1; i < this.GenericRank; i++)
+                    sb.Append(comma);
+
+                sb.Append(">");
+            }
+
+            result = sb.ToString();
+
+            return result;
+
+        }
+
+        public IEnumerable<ParsedAssemblyQualifiedName> GenericParameters { get { return this._genericParameters; } }
+
+        private void AppendArray(StringBuilder sb)
+        {
+
+            sb.Append("[");
+            for (int i = 1; i < this.RankArray; i++)
+                sb.Append(",");
+            sb.Append("]");
+
+        }
+
+        private static void ReduceSystem(Type type, StringBuilder sb)
+        {
+            if (type == typeof(string))
+            {
+                sb.Clear();
+                sb.Append("string");
+            }
+            else if (type == typeof(decimal))
+            {
+                sb.Clear();
+                sb.Append("decimal");
+
+            }
+            else if (type == typeof(float))
+            {
+                sb.Clear();
+                sb.Append("float");
+
+            }
+            else if (type == typeof(long))
+            {
+                sb.Clear();
+                sb.Append("long");
+
+            }
+            else if (type == typeof(int))
+            {
+                sb.Clear();
+                sb.Append("int");
+
+            }
+            else if (type == typeof(long))
+            {
+                sb.Clear();
+                sb.Append("long");
+
+            }
+            else if (type == typeof(short))
+            {
+                sb.Clear();
+                sb.Append("short");
+
+            }
+            else if (type == typeof(double))
+            {
+                sb.Clear();
+                sb.Append("double");
+
+            }
+            else if (type == typeof(uint))
+            {
+                sb.Clear();
+                sb.Append("uint");
+
+            }
+            else if (type == typeof(ulong))
+            {
+                sb.Clear();
+                sb.Append("ulong");
+
+            }
+            else if (type == typeof(ushort))
+            {
+                sb.Clear();
+                sb.Append("ushort");
+
+            }
+        }
+
+        private static string _dot = ".";
+    }
+
+    public enum FormatRule
+    {
+        None,
+        System,
+    }
+
+	}
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\CodeWriter.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\KindType.cs
+    [Flags]
+    public enum KindType
+    {
+
+        /// <summary>
+        /// The none
+        /// </summary>
+        None = 0,
+
+        /// <summary>
+        /// The abstract
+        /// </summary>
+        Abstract = 1,
+
+        /// <summary>
+        /// The sealed
+        /// </summary>
+        Sealed = 2,
+
+        /// <summary>
+        /// The partial
+        /// </summary>
+        Partial = 4,
+
+        /// <summary>
+        /// The static
+        /// </summary>
+        Static = 8,
+
+        /// <summary>
+        /// The asynchronous
+        /// </summary>
+        Async = 16,
+
+		Virtual = 32,
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\KindType.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\Visibility.cs
+    public enum Visibility
+    {
+
+        /// <summary>
+        /// The private
+        /// </summary>
+        Private,
+
+        /// <summary>
+        /// The internal
+        /// </summary>
+        Internal,
+
+        /// <summary>
+        /// The protected
+        /// </summary>
+        Protected,
+
+        /// <summary>
+        /// The public
+        /// </summary>
+        Public
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\Visibility.cs
+
+// start : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\WayEnum.cs
+    public enum WayEnum
+    {
+        /// <summary>
+        /// The none
+        /// </summary>
+        None,
+        
+        /// <summary>
+        /// The parameters
+        /// </summary>
+        Params,
+        
+        /// <summary>
+        /// The in
+        /// </summary>
+        In,
+        
+        /// <summary>
+        /// The out
+        /// </summary>
+        Out,
+
+        /// <summary>
+        /// The reference
+        /// </summary>
+        Ref,
+
+    }
+// end : C:\black-beard\sdk\dev\sp.WebApi.1.0.0\Sources\Black.Beard.Sdk.Generators\Generators\CSharp\WayEnum.cs
+
+
+ #>

@@ -1,0 +1,355 @@
+<#@ template debug="true" hostSpecific="true" inherits="Microsoft.VisualStudio.TextTemplating.VSHost.ModelingTextTransformation" #>
+<#@ StorageModelDriven processor="StorageModelDrivenDirectiveProcessor" requires="fileName='Countries.smd'" #>
+<#@ output extension=".cs" #>
+<#@ assembly name="System.Core" #>
+<#@ assembly name="Microsoft.Build" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Diagnostics" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ include file="$(SolutionDir)\.Solutionfolders\ttIncludes\CSharpWriter.generated.ttinclude" #>
+<#@ includeForIntellisenseOnly processor="tangibleT4Editor" file="$(SolutionDir)\.Solutionfolders\ttIncludes\StorageModelDriven.intellisense.ttinclude" #>
+<# 
+
+	//System.Diagnostics.Debugger.Launch();
+	//System.Diagnostics.Debugger.Break();
+
+	StorageRoot models = this.StorageRoot;
+	
+	// Tables
+	foreach (StorageTable e in models.Tables)
+	{
+
+		WriteLine(Header());
+		CodeWriter wr = new CodeWriter();
+
+		
+        using(var ns = wr.Namespace(e.Namespace))
+        {
+
+			ns.Import("System.ComponentModel");
+			ns.Import("System.ComponentModel.DataAnnotations");
+			ns.Import("System.ComponentModel.DataAnnotations.Schema");
+
+			string _base = null;
+			if (e.SuperTable != null)
+				_base = e.SuperTable.Name;
+
+			int index = 0;
+			ns.WriteComment("summary", e.Description, true);
+			ns.Attribute("Table", @"""" +  e.Name + @"""");
+			using(CodeClassWriter cls = ns.Class(Visibility.Public, KindType.Partial, e.Name, _base))
+            {
+
+                foreach (StorageColumn col in e.Columns)
+                {
+					cls.WriteComment("summary", col.Description);
+					GenerateAttibute(col, cls, index);
+					using(var p = cls.Property(Visibility.Public, KindType.None, wr.WriteType(GetType(col)), col.Name))
+                    {
+						p.AutoGetSet();
+                    }
+
+					index++;
+                }
+
+            }			
+		}	
+	
+		WriteLine(wr.ToString());
+	
+    }
+
+	foreach (StorageTable e in models.Tables)
+	{
+
+		WriteLine(Header());
+		CodeWriter wr = new CodeWriter();
+
+		using(var ns = wr.Namespace(e.Namespace))
+        {
+
+			//ns.Import("System.ComponentModel");
+			//ns.Import("System.ComponentModel.DataAnnotations");
+			//ns.Import("System.ComponentModel.DataAnnotations.Schema");
+
+			string _base = null;
+			if (e.SuperTable != null)
+				_base = e.SuperTable.Name;
+
+			int index = 0;
+			ns.WriteComment("summary", e.Description, true);
+			using(CodeClassWriter cls = ns.Class(Visibility.Public, KindType.Partial, e.Name + "Descriptor", _base))
+            {
+
+				cls.WriteComment("summary", "List of the columns of the table " + e.Name, false);
+				using(CodeClassWriter cls2 = ns.Class(Visibility.Public, KindType.Static, "Columns", _base))
+				{
+					foreach (StorageColumn col in e.Columns)
+					{
+						
+						cls2.Field(Visibility.Public, true, "ColumnDescriptor", col.Name);
+						cls2.Write(" = ");
+						using (var o = cls.NewObject("ColumnDescriptor"))
+                        {
+							o.AppendProperty
+							(
+								new MemberInitializer("Collation", @"""" + col.Collation.Name + @""""),
+								new MemberInitializer("CheckExpression", @"""" + col.CheckExpression + @""""),
+								new MemberInitializer("Description", @"""" + col.Description + @""""),
+								new MemberInitializer("IdentitySeed", string.IsNullOrEmpty(col.IdentitySeed) ? "0" : col.IdentitySeed),
+								new MemberInitializer("IdentityIncrement", string.IsNullOrEmpty(col.IdentityIncrement) ? "0" : col.IdentityIncrement),
+								new MemberInitializer("InitialValue", @"""" + col.InitialValue + @""""),
+								new MemberInitializer("Length", col.Length.ToString()),
+								new MemberInitializer("Name", @"""" + col.Name + @""""),
+								new MemberInitializer("Nullable", col.Nullable ? "true" : "false"),
+								new MemberInitializer("Precision", col.Precision.ToString()),
+								new MemberInitializer("Order", index.ToString())
+							);
+                        }
+
+						cls.WriteLine(";");
+						cls.WriteLine(string.Empty);
+
+						index++;
+
+					}
+                }
+
+            }			
+		}	
+		WriteLine(wr.ToString());
+
+	}
+
+#>
+<#+ 
+
+public static bool ToBoolean(object value)
+{
+
+	if (value == null)
+		return false;
+
+	string v = value.ToString();
+	if (string.IsNullOrEmpty(v))
+		return false;
+    var t = v.Trim().ToLower();
+    if (t == "false" || t == "n" || t == "0" || t == "no" || t == "n/a" || t == "disabled")
+		return false;
+    else if (t == "true" || t == "y" || t == "yes" || t == "o" || t == "1" || t == "-1" || t == "enabled")
+		return true;
+
+    return false;
+}
+
+public static void CreateColumn(StorageColumn column)
+{
+
+}
+
+public static void GenerateAttibute(StorageColumn col, CodeClassWriter cls, int index)
+{
+
+	//PrimaryProperty t = null;
+	if (col.StorageTable.GetKeys().Where(c => c.Name == col.Name).Any())
+    {
+		cls.Attribute("Key");
+    }
+
+	cls.Attribute("Column", @"""" + col.Name + @"""", "Order = " + index.ToString(), @"TypeName = """ + col.Type.Name + @"""");
+
+    foreach (StorageRelationship item in col.StorageTable.Relationships)
+        foreach (RelationshipMappedProperty item2 in item.RelationshipMappedProperty)
+			if (item2.SourceColumn.Column.Name == col.Name)
+				cls.Attribute("ForeignKey", @"""" + item2.ColumnTarget + @"""");
+
+	if (!string.IsNullOrEmpty(col.InitialValue))
+		cls.Attribute("DefaultValue", cls.WriteConstant( col.InitialValue, IsText(col.Type), false));
+	 
+	if (IsText(col.Type))
+		cls.Attribute("StringLength", col.Length.ToString());
+	//else if(IsNumeric(col.Type))
+	//	cls.Attribute("MaxLength", col.Length.ToString());
+
+	if (!col.Nullable)
+		cls.Attribute("Required");
+	/*
+        [System.ComponentModel.DataAnnotations.MinLength(0)]
+        [System.ComponentModel.DataAnnotations.RegularExpression("")]
+        [System.ComponentModel.DataAnnotations.Range(0, 1000)]
+	*/
+
+
+
+}
+
+public static Type GetType(StorageColumn column)
+{
+
+    switch (column.Type.Name)
+    {
+		case "BIGINT":
+			if (column.Nullable)
+				return typeof(long?);
+			else
+				return typeof(long);
+
+		case "INT":
+		case "TINYINT":
+		case "SMALLINT":
+			if (column.Nullable)
+				return typeof(int?);
+			else
+				return typeof(int);
+		
+		case "BIT":
+			if (column.Nullable)
+				return typeof(bool?);
+			else
+				return typeof(bool);
+		
+		case "CHAR":
+		case "NCHAR":
+		case "NVARCHAR":
+		case "NTEXT":
+		case "TEXT":
+		case "VARCHAR":
+		case "XML":
+			return typeof(string);
+		
+		case "DATE":
+		case "DATETIME":
+		case "DATETIME2":
+		case "SMALLDATETIME":
+		case "DATETIMEOFFSET":
+			if (column.Nullable)
+				return typeof(DateTime?);
+			else
+				return typeof(DateTime);
+		
+		case "DECIMAL":
+			if (column.Nullable)
+				return typeof(decimal?);
+			else
+				return typeof(decimal);
+		
+		case "FLOAT":
+			if (column.Nullable)
+				return typeof(float?);
+			else
+				return typeof(float);
+		
+		case "NUMERIC":
+			if (column.Nullable)
+				return typeof(double?);
+			else
+				return typeof(double);
+		
+		case "BINARY":
+		case "VARBINARY":
+		case "IMAGE":
+				return typeof(byte[]);
+		
+		case "SMALLMONEY":
+		case "MONEY":
+			if (column.Nullable)
+				return typeof(int?);
+			else
+				return typeof(int);
+		
+		case "SQL_VARIANT":
+			return typeof(object);
+		
+		case "TIME":
+		case "TIMESTAMP":
+			if (column.Nullable)
+				return typeof(TimeSpan?);
+			else
+				return typeof(TimeSpan);
+		
+		case "UNIQUEIDENTIFIER":
+			if (column.Nullable)
+				return typeof(Guid?);
+			else
+				return typeof(Guid);
+
+		//case "REAL":
+		//case "GEOGRAPHY":
+		//case "GEOMETRY":
+		//case "HIERARCHYID":
+
+        default:
+            break;
+
+    }
+
+	return typeof(object);
+
+}
+
+public static bool IsNumeric(DbType type)
+{
+	
+    switch (type.TypeFamily)
+    {
+		case TypeFamilyEnum.Money:
+		case TypeFamilyEnum.NumericInteger64:
+		case TypeFamilyEnum.NumericInteger32:
+		case TypeFamilyEnum.NumericDecimal32:
+		case TypeFamilyEnum.NumericDecimal64:
+		case TypeFamilyEnum.NumericDecimal16:
+		case TypeFamilyEnum.NumericInteger16:
+			return true;
+
+    }
+
+	return false;
+}
+
+public static bool IsText(DbType type)
+{
+
+    switch (type.TypeFamily)
+    {
+
+		case TypeFamilyEnum.Text:
+		case TypeFamilyEnum.Xml:
+			return true;
+    }
+
+	return false;
+
+}
+
+public static string Header()
+{
+
+	return @"/*
+ *	<auto-generated>									
+ *                     									
+ *	This code was generated from a template launched by Model driven for more 
+ *	information see http://devtm.fr
+ *  Tool created by Gael beard mailto:gaelgael5@gmail.com Copyright 2015
+ *                     									
+ *	Changes to this file may cause incorrect behavior and will be lost if the 
+ *  code is regenerated.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the ""License""). You may not use 
+ *  this file except in compliance with the License. You may obtain a copy of the 
+ *  License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software distributed
+ *  under the License is distributed on an ""AS IS"" BASIS, WITHOUT WARRANTIES OR 
+ *  CONDITIONS OF ANY KIND, either express or implied. See the License for the 
+ *  specific language governing permissions and limitations under the License.
+ *		
+ *	</auto-generated>                  					
+ */
+		";
+}
+
+#>

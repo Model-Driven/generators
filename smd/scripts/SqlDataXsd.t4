@@ -1,0 +1,1081 @@
+<#@ template debug="true" hostSpecific="true" inherits="Microsoft.VisualStudio.TextTemplating.VSHost.ModelingTextTransformation" #>
+<#@ StorageModelDriven processor="StorageModelDrivenDirectiveProcessor" requires="fileName='.smd'" #>
+<#@ output extension=".txt" #>
+<#@ assembly name="System.Core" #>
+<#@ assembly name="Microsoft.Build" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Diagnostics" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ include file="$(SolutionDir)\.Solutionfolders\ttIncludes\ParsingSolution.ttinclude" #>
+<# 
+
+	//System.Diagnostics.Debugger.Launch();
+	//System.Diagnostics.Debugger.Break();
+
+
+	StorageRoot models = this.StorageRoot;
+	
+	string[] ar = Path.GetFileNameWithoutExtension(this.Host.TemplateFile).Split('.');
+	string mabase = ar[0];
+
+	string targetSchema = string.Format(@"http://black.beard.net/{0}/{1}/{2}", mabase, models.DefaultNamespace, "v1");
+
+	using(ManagerScope manager = ScopeHelper.StartManager())
+    {
+		
+		manager.SetFilterToDelete(file => false);
+
+		var prj = manager.GetCurrentProject();
+		string prjPath = prj.LocalPath;
+		string p = new FileInfo(this.Host.TemplateFile).Directory.FullName.Substring(prjPath.Length).Trim('/', '\\');
+		var folder = prj.GetFolder(p);
+	
+
+		string _filename = string.Format("{0}.xsd", mabase);
+		
+		// Test1/Models/Database/Countries.base.xml
+		string _pathInherit = string.Format("{0}/{1}.base.xml", folder.RelativePath, mabase).Replace("/", "\\");
+
+		using(var fileXsd = manager.NewFile(_filename, folder, string.Empty))
+        {
+
+			XmlGenerator xml = new XmlGenerator();
+			xml.StartDocument("1.0", "8");
+			xml.Comment(Header());
+
+			using(var c  = xml.Add("xs", "schema"))
+			{
+
+				c.Attribute("elementFormDefault", "qualified");
+				c.Attribute("xs", "xmlns", "http://www.w3.org/2001/XMLSchema");
+				c.Attribute("xmlns", targetSchema);
+				c.Attribute("targetNamespace", targetSchema);
+				// Tables
+				c.CloseBalise();
+				c.EmptyLine();
+
+				using (var c2 = c.Add("xs", "element"))
+				{
+					c2.Attribute("name", "db");
+					c2.Attribute("type", "dbCT");
+				}
+
+				using (var c2 = c.Add("xs", "complexType"))
+				{
+					c2.Attribute("name", "dbCT");
+
+					using (var c3 = c2.Add("xs", "sequence"))
+					{
+        
+						foreach (StorageTable e in models.Tables)
+						{
+							using (var c4 = c3.Add("xs", "element"))
+							{
+								c4.Attribute("name", "table" + e.Name);
+								c4.Attribute("type", "table" + e.Name);
+								c4.Attribute("minOccurs", "0");
+								c4.Attribute("maxOccurs", "1");
+								c4.AutoCloseBalise();
+							}
+						}
+						using (var c4 = c3.Add("xs", "element"))
+						{
+							c4.Attribute("name", "Scripts");
+							c4.Attribute("type", "ScriptsCT");
+							c4.Attribute("minOccurs", "0");
+							c4.Attribute("maxOccurs", "1");
+							c4.AutoCloseBalise();
+						}
+					}
+					
+					using (var c3 = c2.Add("xs", "attribute"))
+					{
+						c3.Attribute("name", "inherit");
+						c3.Attribute("type", "xs:string");
+						c3.Attribute("default", _pathInherit);
+						using (var c5 = c3.Add("xs", "annotation"))
+						using (var c6 = c5.Add("xs", "documentation"))
+						{
+							c6.CData("document base overrided by the current document. By default the value is '" + _pathInherit +"'");
+						}
+					}
+
+					using (var c3 = c2.Add("xs", "attribute"))
+					{
+						c3.Attribute("name", "Namespace");
+						c3.Attribute("type", "xs:string");
+						c3.Attribute("default", models.DefaultNamespace);
+
+						using (var c5 = c3.Add("xs", "annotation"))
+						using (var c6 = c5.Add("xs", "documentation"))
+						{
+							c6.CData("target namespace localizable table.");
+						}
+					}
+
+					using (var c3 = c2.Add("xs", "attribute"))
+					{
+						c3.Attribute("name", "environment");
+						c3.Attribute("type", "xs:string");
+						using (var c5 = c3.Add("xs", "annotation"))
+						using (var c6 = c5.Add("xs", "documentation"))
+						{
+							c6.CData("environment name.");
+						}
+					}
+
+
+				}
+
+				foreach (StorageTable e in models.Tables)
+				{
+
+					c.EmptyLine();
+					using (var c2 = c.Add("xs", "complexType"))
+					{
+
+						c2.Attribute("name", "table" + e.Name);
+						using (var c3 = c2.Add("xs", "sequence"))
+						{
+        
+							using (var c4 = c3.Add("xs", "element"))
+							{
+								c4.Attribute("name", e.Name);
+								c4.Attribute("type", e.Name + "CT");
+								c4.Attribute("minOccurs", "0");
+								c4.Attribute("maxOccurs", "unbounded");
+								c4.AutoCloseBalise();
+							}
+
+							using (var c4 = c3.Add("xs", "element"))
+							{
+								c4.Attribute("name", "PrimaryKeys");
+								c4.Attribute("type", e.Name + "Columns");
+								c4.Attribute("minOccurs", "0");
+								c4.Attribute("maxOccurs", "1");
+								c4.AutoCloseBalise();
+							}
+
+							/*
+								c4.Attribute("minOccurs", "1");
+								c4.Attribute("maxOccurs", e.Columns.Count().ToString());
+							*/
+
+						}
+
+					}
+
+					c.EmptyLine();
+
+					using (var c2 = c.Add("xs", "complexType"))
+					{
+						c2.Attribute("name", e.Name + "CT");
+						foreach (StorageColumn col in e.Columns)
+						{
+							using (var c3 = c2.Add("xs", "attribute"))
+							{
+
+								c3.Attribute("name", col.Name);
+								c3.Attribute("type", GetType(col));
+						
+								if (col.Nullable)
+									c3.Attribute("use", "optional");
+								else
+									c3.Attribute("use", "required");
+						
+								if (!string.IsNullOrEmpty(col.InitialValue))
+									c3.Attribute("default", "col.InitialValue");
+
+								if (!string.IsNullOrEmpty(col.Description))
+									using (var c5 = c3.Add("xs", "annotation"))
+									{
+										using (var c6 = c5.Add("xs", "documentation"))
+										{
+											c6.CData(col.Description.Trim('.') + ".");
+										}
+									}
+
+							}					
+						}
+
+					}
+		
+				}
+
+				GenerateTypes(models, c);
+
+				c.EmptyLine();
+
+
+
+				// scripts
+
+				using (var c2 = c.Add("xs", "complexType"))
+				{
+
+					c2.Attribute("name", "ScriptsCT");
+					using (var c3 = c2.Add("xs", "sequence"))
+					{
+						using (var c4 = c3.Add("xs", "element"))
+						{
+							c4.Attribute("name", "Script");
+							c4.Attribute("type", "ScriptCT");
+							c4.Attribute("minOccurs", "1");
+							c4.Attribute("maxOccurs", "unbounded");
+                    
+							using (var c5 = c4.Add("xs", "annotation"))
+							{
+								using (var c6 = c5.Add("xs", "documentation"))
+								{								
+									c6.CData("target T4 script's list to execute after every save");
+								}
+							}
+                        }
+                    }
+                }
+
+				c.EmptyLine();
+				using (var c2 = c.Add("xs", "complexType"))
+				{
+
+					c2.Attribute("name", "ScriptCT");
+					using (var c3 = c2.Add("xs", "sequence"))
+					{
+						using (var c4 = c3.Add("xs", "element"))
+						{
+							c4.Attribute("name", "Arguments");
+							c4.Attribute("type", "ArgumentsCT");
+							c4.Attribute("minOccurs", "0");
+							c4.Attribute("maxOccurs", "1");
+                    
+							using (var c5 = c4.Add("xs", "annotation"))
+							{
+								using (var c6 = c5.Add("xs", "documentation"))
+								{
+									c6.CData("arguments's list");
+								}
+							}
+                        }
+                    }
+
+					using (var c3 = c2.Add("xs", "attribute"))
+					{
+						c3.Attribute("name", "filename");
+						c3.Attribute("type", "xs:string");
+						using (var c5 = c3.Add("xs", "annotation"))
+						{
+							using (var c6 = c5.Add("xs", "documentation"))
+							{
+								c6.CData("script's filename");
+							}
+						}
+					}
+
+                }
+
+				c.EmptyLine();
+				using (var c2 = c.Add("xs", "complexType"))
+				{
+
+					c2.Attribute("name", "ArgumentsCT");
+					using (var c3 = c2.Add("xs", "sequence"))
+					{
+						using (var c4 = c3.Add("xs", "element"))
+						{
+
+							c4.Attribute("name", "Argument");
+							c4.Attribute("type", "ArgumentCT");
+							c4.Attribute("minOccurs", "1");
+							c4.Attribute("maxOccurs", "unbounded");
+                    
+							using (var c5 = c4.Add("xs", "annotation"))
+							{
+								using (var c6 = c5.Add("xs", "documentation"))
+								{
+									c6.CData("arguments's list");
+								}
+							}
+                        }
+					}
+					
+
+                }
+
+				// argument item
+				c.EmptyLine();
+				using (var c2 = c.Add("xs", "complexType"))
+				{
+
+					c2.Attribute("name", "ArgumentCT");
+
+					using (var c3 = c2.Add("xs", "attribute"))
+					{
+						c3.Attribute("name", "name");
+						c3.Attribute("type", "xs:string");
+						using (var c5 = c3.Add("xs", "annotation"))
+						{
+							using (var c6 = c5.Add("xs", "documentation"))
+							{
+								c6.CData("argument's name");
+							}
+						}
+					}
+
+					using (var c3 = c2.Add("xs", "attribute"))
+					{
+						c3.Attribute("name", "value");
+						c3.Attribute("type", "xs:string");
+						using (var c5 = c3.Add("xs", "annotation"))
+						{
+							using (var c6 = c5.Add("xs", "documentation"))
+							{
+								c6.CData("argument's value");
+							}
+						}
+					}
+                }
+
+
+
+				c.EmptyLine();
+
+			}
+
+			Write(xml.ToString());
+
+		}
+				
+		_filename = string.Format("{0}.base.xml", mabase);
+		using(ScriptFileScope filexml = manager.NewFile(_filename, folder, string.Empty))
+        {
+
+			XmlGenerator xml = new XmlGenerator();
+			xml.StartDocument("1.0", "8");
+			xml.Comment(Header());
+
+			using(var c  = xml.Add(null, "db"))
+			{
+				c.Attribute("xmlns", targetSchema);
+				c.Attribute("environment", ""	);
+				c.Attribute("script", "");
+				c.Attribute("inherit", "");
+            
+				foreach (StorageTable table in models.Tables)
+				{
+					using(var d = c.Add(null, "table" + table.Name))
+					{					
+						using(var e = d.Add(null, "PrimaryKeys"))
+						{
+							foreach (PrimaryProperty key in table.GetKeys())
+							{
+								using(var f = e.Add(null, "key"))
+								{
+									f.Attribute("key", key.Name);
+									f.Attribute("identity", key.PrimaryColumn.Column.IsIdentity ? "true" : "false");
+									f.AutoCloseBalise();
+                                }		
+							}
+                        }	
+                    }
+				}
+			
+			
+			}
+
+			Write(xml.ToString());
+
+			//var u = filexml.RelativePath;
+			//prj.SetMetadata(u, "Generator", "toto");
+
+			//filexml.SetPropertyFile("Generator", "toto");
+
+        }
+
+    }
+#>
+<#+ 
+
+public class XmlGenerator
+{
+
+	private MemoryStream stream;
+	private StreamWriter streamWr;
+	private System.CodeDom.Compiler.IndentedTextWriter sb;
+
+    public XmlGenerator()
+    {
+		this.sb = CreateContainer();
+    }
+
+	public void EmptyLine()
+	{
+		this.sb.WriteLine(string.Empty);
+    }
+
+	public XmlContainer Add(string schema, string name)		
+	{	    
+		return new XmlContainer(null, this.sb, schema, name);
+	}
+
+	public XmlContainer Add(string name)		
+	{	    
+		return new XmlContainer(null, this.sb, null, name);
+	}
+
+	public void StartDocument(string version = "1.0", string utf = "16")
+    {
+	
+		sb.WriteLine(string.Format(@"<?xml version=""{0}"" encoding=""utf-{1}""?>", version, utf));
+
+    }
+	
+	public void Comment(string text)
+    {
+		sb.Write("<!--");
+		sb.Write(text);
+		sb.Write("-->");
+    }
+
+	private System.CodeDom.Compiler.IndentedTextWriter CreateContainer()
+	{
+		this.stream = new MemoryStream();
+		this.streamWr = new StreamWriter(stream);
+		this.sb = new System.CodeDom.Compiler.IndentedTextWriter(streamWr);
+		return sb;
+	}
+
+	public override string ToString()
+	{
+		this.sb.Flush();
+		this.streamWr.Flush();
+		stream.Flush();
+		byte[] datas = stream.ToArray();
+		return System.Text.Encoding.UTF8.GetString(datas);
+	}
+
+}
+
+public class XmlContainer : IDisposable
+{
+
+	private XmlContainer container;
+	private bool closed;
+	private System.CodeDom.Compiler.IndentedTextWriter sb;
+	private bool autoclosed = false;
+
+	public XmlContainer(XmlContainer container, System.CodeDom.Compiler.IndentedTextWriter sb, string schema, string name)	
+	{
+		this.container = container;
+		this.sb = sb;
+		this.Schema = schema;
+		this.Name = name;
+		WriteStartBalise();
+	}
+
+	public XmlContainer Add(string schema, string name)
+	{	    
+		return new XmlContainer(this, this.sb, schema, name);
+	}
+
+	public XmlContainer Add(string name)
+	{	    
+		return new XmlContainer(this, this.sb, null, name);
+	}
+
+	public void Comment(string text)
+    {
+		sb.Write("<!--");
+		sb.Write(text);
+		sb.Write("-->");
+    }
+
+	protected void WriteStartBalise()
+    {
+
+		if (this.container != null)
+			this.container.CloseBalise();
+
+		if (string.IsNullOrEmpty(this.Schema))
+			WriteFormat("<{0}", this.Name);
+        else
+			WriteFormat("<{0}:{1}", this.Schema, this.Name);
+    
+	}
+
+	public void CloseBalise()
+    {
+		if (!closed)
+		{ 
+			closed = true;
+			WriteLine(">");
+			sb.Indent++;				
+		}
+    }
+
+	public void AutoCloseBalise()
+    {
+		if (!closed)
+		{ 
+			closed = true;
+			WriteLine(" />");	
+			autoclosed = true;		
+		}
+    }
+
+
+	public void CData(string text)
+    {
+		CloseBalise();
+		Write("<![CDATA[");
+		Write(text);
+		WriteLine("]]>");
+    }
+
+	protected void Write(string text)
+    {
+		this.sb.Write(text);
+    }
+
+	protected void WriteLine(string text)
+    {
+		this.sb.WriteLine(text);
+    }
+
+	protected void WriteFormat(string mask, params object[] args)
+    {
+		this.sb.Write(string.Format(mask, args));
+    }
+
+	public string Schema { get; set; }
+
+	public string Name { get; set; }
+
+	public void Dispose()
+	{
+
+		CloseBalise();
+
+		if (!autoclosed)
+        {
+
+			sb.Indent--;
+
+			if (string.IsNullOrEmpty(this.Schema))
+				WriteFormat("</{0}>", this.Name);
+			else
+				WriteFormat("</{0}:{1}>", this.Schema, this.Name);
+
+			WriteLine(string.Empty);
+        
+		}
+
+
+	}
+
+	public void Attribute(string schema, string name, string value)
+    {
+		if (string.IsNullOrEmpty(this.Schema))
+			WriteFormat(@" {0}=""{1}""", name, value);
+        else
+			WriteFormat(@" {0}:{1}=""{2}""", name, schema, value);
+    }
+
+	public void Attribute(string name, string value)
+    {
+		WriteFormat(@" {0}=""{1}""", name, value);
+    }
+
+	public void EmptyLine()
+    {
+		this.sb.WriteLine(string.Empty);
+    }
+
+}
+
+public void GenerateTypes(StorageRoot models, XmlContainer schema)
+{
+	HashSet<string> _h = new HashSet<string>();
+    foreach (StorageType item in models.Tables)
+    {
+		 StorageTable table = item as StorageTable;
+		if (table != null)
+        {
+            foreach (StorageColumn col in table.Columns)
+            {
+				string typeName = EvaluateName(col);
+				if (typeName != null && _h.Add(typeName))
+                {
+					schema.EmptyLine();
+					using (var type = schema.Add("xs", "simpleType"))
+					{
+						type.Attribute("name", typeName);												
+						GenerateType(col, typeName, type);						
+					}
+                }
+            }
+        }
+
+		schema.EmptyLine();
+		using (var s1 = schema.Add("xs", "complexType"))
+        {
+
+			s1.Attribute("name", table.Name + "Columns");
+
+			using (var s2 = s1.Add("xs", "sequence"))
+			{
+
+				using (var c3 = s2.Add("xs", "element"))
+				{
+					c3.Attribute("name", "key");
+					c3.Attribute("type", table.Name + "ColumnCT");
+					c3.Attribute("minOccurs", "1");
+					c3.Attribute("maxOccurs", table.Columns.Count().ToString());
+					c3.AutoCloseBalise();
+				}
+			}
+        }
+
+		schema.EmptyLine();
+		using (var s1 = schema.Add("xs", "complexType"))
+        {
+
+			s1.Attribute("name", table.Name + "ColumnCT");
+
+			using (var c3 = s1.Add("xs", "attribute"))
+			{
+				c3.Attribute("name", "key");
+				c3.Attribute("type", table.Name + "Column");
+				c3.AutoCloseBalise();
+			}
+
+			using (var c3 = s1.Add("xs", "attribute"))
+			{
+				c3.Attribute("name", "identity");
+				c3.Attribute("type", "xs:boolean");
+				c3.AutoCloseBalise();
+			}
+
+        }
+
+		schema.EmptyLine();
+		using (var s1 = schema.Add("xs", "simpleType"))
+        {
+			
+			s1.Attribute("name", table.Name + "Column");
+
+			using (var annotation = s1.Add("xs", "annotation"))
+			using (var doc = annotation.Add("xs", "documentation"))
+				doc.CData(string.Format("List of the columns of the table '{0}'.", table.Name));
+
+			using (var s2 = s1.Add("xs", "restriction"))
+            {
+				int i = 0;
+				s2.Attribute("base", "xs:string");
+				foreach (StorageColumn col in table.Columns)
+                {
+					using (var e = s2.Add("xs", "enumeration"))
+					{
+
+						//s2.Attribute("id", table.Name + "_" + col.Name);
+						s2.Attribute("value", col.Name);
+
+						e.AutoCloseBalise();
+					}
+                }
+            }
+
+        }
+
+    }
+
+}
+
+public static string EvaluateName(StorageColumn column)
+{
+
+    switch (column.Type.Name)
+    {
+		case "BIGINT":
+		case "INT":
+		case "SMALLMONEY":
+		case "MONEY":
+			return null;
+
+		case "TINYINT":
+		case "SMALLINT":
+			return null;
+
+		
+		case "BIT":
+		    return null;
+		
+		case "CHAR":
+		case "NCHAR":
+		case "NVARCHAR":
+		case "NTEXT":
+		case "TEXT":
+		case "VARCHAR":
+		case "XML":
+			if (column.Length > 0)
+				return "TEXTLENGTH" + column.Length.ToString();
+	        return null;
+		
+		case "DATETIME":
+		case "DATETIME2":
+		case "SMALLDATETIME":
+		case "DATETIMEOFFSET":
+	        return null;
+
+		case "DATE":
+			return null;
+		
+		case "DECIMAL":
+			return null;
+
+		case "FLOAT":
+			return null;
+		
+		case "REAL":
+		case "NUMERIC":
+			return null;
+
+		case "BINARY":
+		case "VARBINARY":
+		case "IMAGE":
+			return null;
+		
+		case "SQL_VARIANT":
+			return null;
+
+		case "TIME":
+		case "TIMESTAMP":
+			return null;
+
+		case "UNIQUEIDENTIFIER":
+        return "guid";
+
+		//case "GEOGRAPHY":
+		//case "GEOMETRY":
+		//case "HIERARCHYID":
+
+        default:
+            break;
+
+    }
+
+	return null;
+
+}
+
+public static void GenerateType(StorageColumn column, string name, XmlContainer type)
+{
+
+	string _fixed = "false";
+
+    switch (column.Type.Name)
+    {
+
+		case "NVARCHAR":						
+		case "CHAR":
+		case "NCHAR":
+		case "NTEXT":
+		case "TEXT":
+		case "VARCHAR":
+		case "XML":
+        {
+
+			if (column.Length > 0)
+            {
+				switch (column.Type.Name)
+				{
+					case "NVARCHAR":						
+					case "CHAR":
+					case "NCHAR":
+						_fixed = "true";
+						break;
+					case "NTEXT":
+					case "TEXT":
+					case "VARCHAR":
+					default:
+						_fixed = "false";
+						break;
+				}
+
+				using (var annotation = type.Add("xs", "annotation"))
+				{
+					using (var doc = annotation.Add("xs", "documentation"))
+						doc.CData(string.Format("This column can't exceed {0} charset.", column.Length));
+				}
+
+				using (var restriction = type.Add("xs", "restriction"))
+				{
+					type.Attribute("base", "xs:string");
+					using (var c4 = restriction.Add("xs", "maxLength"))
+					{
+						c4.Attribute("fixed", _fixed);
+						c4.Attribute("value", column.Length.ToString());
+					}
+				}
+            }
+		}
+        break;		
+		
+		case "UNIQUEIDENTIFIER":
+        {
+
+			using (var annotation = type.Add("xs", "annotation"))
+			{
+				using (var doc = annotation.Add("xs", "documentation"))
+					doc.CData("The column is of type 'Guid'");
+			}
+
+			using (var restriction = type.Add("xs", "restriction"))
+			{
+				type.Attribute("base", "xs:string");
+				using (var c4 = restriction.Add("xs", "pattern"))
+					c4.Attribute("value", @"\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\}");
+            }
+		}
+        break;
+
+
+		case "BIGINT":
+		case "INT":
+		case "SMALLMONEY":
+		case "MONEY":
+        {
+		}
+        break;
+
+		case "TINYINT":
+		case "SMALLINT":
+        {
+		}
+        break;
+		
+		case "BIT":
+        {
+		}
+        break;		
+		
+		case "DECIMAL":
+        {
+		}
+        break;
+		
+		case "FLOAT":
+		{
+		}
+        break;
+		
+		case "REAL":
+		case "NUMERIC":
+		{
+		}
+        break;
+		
+		case "BINARY":
+		case "VARBINARY":
+		case "IMAGE":
+		{
+		}
+        break;
+		
+		case "SQL_VARIANT":
+		{
+		}
+        break;
+
+		case "DATETIME":
+		case "DATETIME2":
+		case "SMALLDATETIME":
+		case "DATETIMEOFFSET":
+        {
+		}
+        break;
+
+		case "DATE":
+        {
+
+		}
+        break;
+
+		case "TIME":
+		case "TIMESTAMP":
+        {
+		}		
+        break;
+		
+
+		//case "GEOGRAPHY":
+		//case "GEOMETRY":
+		//case "HIERARCHYID":
+
+        default:
+            break;
+
+    }
+
+}
+
+public static bool ToBoolean(object value)
+{
+
+	if (value == null)
+		return false;
+
+	string v = value.ToString();
+	if (string.IsNullOrEmpty(v))
+		return false;
+    var t = v.Trim().ToLower();
+    if (t == "false" || t == "n" || t == "0" || t == "no" || t == "n/a" || t == "disabled")
+		return false;
+    else if (t == "true" || t == "y" || t == "yes" || t == "o" || t == "1" || t == "-1" || t == "enabled")
+		return true;
+
+    return false;
+}
+
+public static string GetType(StorageColumn column)
+{
+
+	string typeName = EvaluateName(column);
+
+	if (!string.IsNullOrEmpty(typeName))
+		return typeName;
+
+    switch (column.Type.Name)
+    {
+		case "BIGINT":
+		case "INT":
+		case "SMALLMONEY":
+		case "MONEY":
+			return "xs:integer";
+
+		case "TINYINT":
+		case "SMALLINT":
+			return "xs:short";
+		
+		case "BIT":
+			return "xs:boolean";
+		
+		case "CHAR":
+		case "NCHAR":
+		case "NVARCHAR":
+		case "NTEXT":
+		case "TEXT":
+		case "VARCHAR":
+		case "XML":
+			return "xs:string";
+		
+		case "DATETIME":
+		case "DATETIME2":
+		case "SMALLDATETIME":
+		case "DATETIMEOFFSET":
+			return "xs:dateTime";
+
+		case "DATE":
+			return "xs:date";
+		
+		case "DECIMAL":
+			return "xs:decimal";
+		
+		case "FLOAT":
+			return "xs:float";
+		
+		case "REAL":
+		case "NUMERIC":
+			return "xs:double";
+		
+		case "BINARY":
+		case "VARBINARY":
+		case "IMAGE":
+			return "xs:byte";
+		
+		case "SQL_VARIANT":
+			return "";
+		
+		case "TIME":
+		case "TIMESTAMP":
+			return "xs:time";
+		
+		case "UNIQUEIDENTIFIER":
+			return "guid";
+
+		//case "GEOGRAPHY":
+		//case "GEOMETRY":
+		//case "HIERARCHYID":
+
+        default:
+            break;
+
+    }
+
+	return "xs:string";
+
+}
+
+public static bool IsNumeric(DbType type)
+{
+	
+    switch (type.TypeFamily)
+    {
+		case TypeFamilyEnum.Money:
+		case TypeFamilyEnum.NumericInteger64:
+		case TypeFamilyEnum.NumericInteger32:
+		case TypeFamilyEnum.NumericDecimal32:
+		case TypeFamilyEnum.NumericDecimal64:
+		case TypeFamilyEnum.NumericDecimal16:
+		case TypeFamilyEnum.NumericInteger16:
+			return true;
+    }
+
+	return false;
+}
+
+public static bool IsText(DbType type)
+{
+
+    switch (type.TypeFamily)
+    {
+
+		case TypeFamilyEnum.Text:
+		case TypeFamilyEnum.Xml:
+			return true;
+    }
+
+	return false;
+
+}
+
+public static string Header()
+{
+
+	return @"
+ *	<auto-generated>									
+ *                     									
+ *	This code was generated from a template launched by Model driven for more 
+ *	information see http://devtm.fr
+ *  Tool created by Gael beard mailto:gaelgael5@gmail.com Copyright 2015
+ *                     									
+ *	Changes to this file may cause incorrect behavior and will be lost if the 
+ *  code is regenerated.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the ""License""). You may not use 
+ *  this file except in compliance with the License. You may obtain a copy of the 
+ *  License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software distributed
+ *  under the License is distributed on an ""AS IS"" BASIS, WITHOUT WARRANTIES OR 
+ *  CONDITIONS OF ANY KIND, either express or implied. See the License for the 
+ *  specific language governing permissions and limitations under the License.
+ *		
+ *	</auto-generated>                  					
+";
+}
+
+#>
